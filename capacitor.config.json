@@ -1,0 +1,12 @@
+{
+  "appId": "com.explola.app",
+  "appName": "Explola",
+  "webDir": "dist",
+  "backgroundColor": "#552026",
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

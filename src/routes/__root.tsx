@@ -84,18 +84,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { title: "Mobile App Starter" },
+      { title: "Explola — Explore with Confidence" },
       {
         name: "description",
-        content: "Clean mobile app starter. This is the starting point for a new project.",
+        content: "Discover verified safari and tour operators across Africa and request a personalized quote.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: "#f7f7f8" },
+      { name: "theme-color", content: "#FBF6EE" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: asset("/favicon.ico"), type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap",
+      },
+      { rel: "icon", href: asset("/favicon.png"), type: "image/png" },
+      { rel: "apple-touch-icon", href: asset("/apple-touch-icon.png") },
     ],
   }),
 
@@ -109,6 +116,11 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=JSON.parse(localStorage.getItem("explola-v1")||"{}").theme||"system";var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>

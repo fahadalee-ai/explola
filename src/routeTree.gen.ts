@@ -10,33 +10,440 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EditProfileRouteImport } from './routes/edit-profile'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as ForgotRouteImport } from './routes/forgot'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as InquiriesRouteImport } from './routes/inquiries'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PreferencesRouteImport } from './routes/preferences'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RequestRouteImport } from './routes/request'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ChatIdRouteImport } from './routes/chat.$id'
+import { Route as DestinationIdRouteImport } from './routes/destination.$id'
+import { Route as InquiryIdRouteImport } from './routes/inquiry.$id'
+import { Route as OperatorIndexRouteImport } from './routes/operator/index'
+import { Route as OperatorAccountRouteImport } from './routes/operator/account'
+import { Route as OperatorInquiriesRouteImport } from './routes/operator/inquiries'
+import { Route as OperatorListingsRouteImport } from './routes/operator/listings'
+import { Route as OperatorOnboardingRouteImport } from './routes/operator/onboarding'
+import { Route as OperatorPlansRouteImport } from './routes/operator/plans'
+import { Route as OperatorReviewsRouteImport } from './routes/operator/reviews'
+import { Route as OperatorsIdRouteImport } from './routes/operators.$id'
+import { Route as ReviewIdRouteImport } from './routes/review.$id'
+import { Route as TourIdRouteImport } from './routes/tour.$id'
+import { Route as OperatorInquiryIdRouteImport } from './routes/operator/inquiry.$id'
+import { Route as OperatorListingIdRouteImport } from './routes/operator/listing.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditProfileRoute = EditProfileRouteImport.update({
+  id: '/edit-profile',
+  path: '/edit-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotRoute = ForgotRouteImport.update({
+  id: '/forgot',
+  path: '/forgot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InquiriesRoute = InquiriesRouteImport.update({
+  id: '/inquiries',
+  path: '/inquiries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreferencesRoute = PreferencesRouteImport.update({
+  id: '/preferences',
+  path: '/preferences',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestRoute = RequestRouteImport.update({
+  id: '/request',
+  path: '/request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatIdRoute = ChatIdRouteImport.update({
+  id: '/chat/$id',
+  path: '/chat/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DestinationIdRoute = DestinationIdRouteImport.update({
+  id: '/destination/$id',
+  path: '/destination/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InquiryIdRoute = InquiryIdRouteImport.update({
+  id: '/inquiry/$id',
+  path: '/inquiry/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorIndexRoute = OperatorIndexRouteImport.update({
+  id: '/operator/',
+  path: '/operator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorAccountRoute = OperatorAccountRouteImport.update({
+  id: '/operator/account',
+  path: '/operator/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorInquiriesRoute = OperatorInquiriesRouteImport.update({
+  id: '/operator/inquiries',
+  path: '/operator/inquiries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorListingsRoute = OperatorListingsRouteImport.update({
+  id: '/operator/listings',
+  path: '/operator/listings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorOnboardingRoute = OperatorOnboardingRouteImport.update({
+  id: '/operator/onboarding',
+  path: '/operator/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorPlansRoute = OperatorPlansRouteImport.update({
+  id: '/operator/plans',
+  path: '/operator/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorReviewsRoute = OperatorReviewsRouteImport.update({
+  id: '/operator/reviews',
+  path: '/operator/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorsIdRoute = OperatorsIdRouteImport.update({
+  id: '/operators/$id',
+  path: '/operators/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewIdRoute = ReviewIdRouteImport.update({
+  id: '/review/$id',
+  path: '/review/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TourIdRoute = TourIdRouteImport.update({
+  id: '/tour/$id',
+  path: '/tour/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorInquiryIdRoute = OperatorInquiryIdRouteImport.update({
+  id: '/operator/inquiry/$id',
+  path: '/operator/inquiry/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperatorListingIdRoute = OperatorListingIdRouteImport.update({
+  id: '/operator/listing/$id',
+  path: '/operator/listing/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/edit-profile': typeof EditProfileRoute
+  '/explore': typeof ExploreRoute
+  '/forgot': typeof ForgotRoute
+  '/help': typeof HelpRoute
+  '/inquiries': typeof InquiriesRoute
+  '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/preferences': typeof PreferencesRoute
+  '/profile': typeof ProfileRoute
+  '/request': typeof RequestRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/chat/$id': typeof ChatIdRoute
+  '/destination/$id': typeof DestinationIdRoute
+  '/inquiry/$id': typeof InquiryIdRoute
+  '/operator/account': typeof OperatorAccountRoute
+  '/operator/inquiries': typeof OperatorInquiriesRoute
+  '/operator/listings': typeof OperatorListingsRoute
+  '/operator/onboarding': typeof OperatorOnboardingRoute
+  '/operator/plans': typeof OperatorPlansRoute
+  '/operator/reviews': typeof OperatorReviewsRoute
+  '/operators/$id': typeof OperatorsIdRoute
+  '/review/$id': typeof ReviewIdRoute
+  '/tour/$id': typeof TourIdRoute
+  '/operator/': typeof OperatorIndexRoute
+  '/operator/inquiry/$id': typeof OperatorInquiryIdRoute
+  '/operator/listing/$id': typeof OperatorListingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/edit-profile': typeof EditProfileRoute
+  '/explore': typeof ExploreRoute
+  '/forgot': typeof ForgotRoute
+  '/help': typeof HelpRoute
+  '/inquiries': typeof InquiriesRoute
+  '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/preferences': typeof PreferencesRoute
+  '/profile': typeof ProfileRoute
+  '/request': typeof RequestRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/chat/$id': typeof ChatIdRoute
+  '/destination/$id': typeof DestinationIdRoute
+  '/inquiry/$id': typeof InquiryIdRoute
+  '/operator/account': typeof OperatorAccountRoute
+  '/operator/inquiries': typeof OperatorInquiriesRoute
+  '/operator/listings': typeof OperatorListingsRoute
+  '/operator/onboarding': typeof OperatorOnboardingRoute
+  '/operator/plans': typeof OperatorPlansRoute
+  '/operator/reviews': typeof OperatorReviewsRoute
+  '/operators/$id': typeof OperatorsIdRoute
+  '/review/$id': typeof ReviewIdRoute
+  '/tour/$id': typeof TourIdRoute
+  '/operator': typeof OperatorIndexRoute
+  '/operator/inquiry/$id': typeof OperatorInquiryIdRoute
+  '/operator/listing/$id': typeof OperatorListingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/edit-profile': typeof EditProfileRoute
+  '/explore': typeof ExploreRoute
+  '/forgot': typeof ForgotRoute
+  '/help': typeof HelpRoute
+  '/inquiries': typeof InquiriesRoute
+  '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/preferences': typeof PreferencesRoute
+  '/profile': typeof ProfileRoute
+  '/request': typeof RequestRoute
+  '/saved': typeof SavedRoute
+  '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/chat/$id': typeof ChatIdRoute
+  '/destination/$id': typeof DestinationIdRoute
+  '/inquiry/$id': typeof InquiryIdRoute
+  '/operator/account': typeof OperatorAccountRoute
+  '/operator/inquiries': typeof OperatorInquiriesRoute
+  '/operator/listings': typeof OperatorListingsRoute
+  '/operator/onboarding': typeof OperatorOnboardingRoute
+  '/operator/plans': typeof OperatorPlansRoute
+  '/operator/reviews': typeof OperatorReviewsRoute
+  '/operators/$id': typeof OperatorsIdRoute
+  '/review/$id': typeof ReviewIdRoute
+  '/tour/$id': typeof TourIdRoute
+  '/operator/': typeof OperatorIndexRoute
+  '/operator/inquiry/$id': typeof OperatorInquiryIdRoute
+  '/operator/listing/$id': typeof OperatorListingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/edit-profile'
+    | '/explore'
+    | '/forgot'
+    | '/help'
+    | '/inquiries'
+    | '/login'
+    | '/messages'
+    | '/notifications'
+    | '/onboarding'
+    | '/preferences'
+    | '/profile'
+    | '/request'
+    | '/saved'
+    | '/search'
+    | '/settings'
+    | '/signup'
+    | '/chat/$id'
+    | '/destination/$id'
+    | '/inquiry/$id'
+    | '/operator/account'
+    | '/operator/inquiries'
+    | '/operator/listings'
+    | '/operator/onboarding'
+    | '/operator/plans'
+    | '/operator/reviews'
+    | '/operators/$id'
+    | '/review/$id'
+    | '/tour/$id'
+    | '/operator/'
+    | '/operator/inquiry/$id'
+    | '/operator/listing/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/edit-profile'
+    | '/explore'
+    | '/forgot'
+    | '/help'
+    | '/inquiries'
+    | '/login'
+    | '/messages'
+    | '/notifications'
+    | '/onboarding'
+    | '/preferences'
+    | '/profile'
+    | '/request'
+    | '/saved'
+    | '/search'
+    | '/settings'
+    | '/signup'
+    | '/chat/$id'
+    | '/destination/$id'
+    | '/inquiry/$id'
+    | '/operator/account'
+    | '/operator/inquiries'
+    | '/operator/listings'
+    | '/operator/onboarding'
+    | '/operator/plans'
+    | '/operator/reviews'
+    | '/operators/$id'
+    | '/review/$id'
+    | '/tour/$id'
+    | '/operator'
+    | '/operator/inquiry/$id'
+    | '/operator/listing/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/edit-profile'
+    | '/explore'
+    | '/forgot'
+    | '/help'
+    | '/inquiries'
+    | '/login'
+    | '/messages'
+    | '/notifications'
+    | '/onboarding'
+    | '/preferences'
+    | '/profile'
+    | '/request'
+    | '/saved'
+    | '/search'
+    | '/settings'
+    | '/signup'
+    | '/chat/$id'
+    | '/destination/$id'
+    | '/inquiry/$id'
+    | '/operator/account'
+    | '/operator/inquiries'
+    | '/operator/listings'
+    | '/operator/onboarding'
+    | '/operator/plans'
+    | '/operator/reviews'
+    | '/operators/$id'
+    | '/review/$id'
+    | '/tour/$id'
+    | '/operator/'
+    | '/operator/inquiry/$id'
+    | '/operator/listing/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EditProfileRoute: typeof EditProfileRoute
+  ExploreRoute: typeof ExploreRoute
+  ForgotRoute: typeof ForgotRoute
+  HelpRoute: typeof HelpRoute
+  InquiriesRoute: typeof InquiriesRoute
+  LoginRoute: typeof LoginRoute
+  MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRoute
+  PreferencesRoute: typeof PreferencesRoute
+  ProfileRoute: typeof ProfileRoute
+  RequestRoute: typeof RequestRoute
+  SavedRoute: typeof SavedRoute
+  SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
+  ChatIdRoute: typeof ChatIdRoute
+  DestinationIdRoute: typeof DestinationIdRoute
+  InquiryIdRoute: typeof InquiryIdRoute
+  OperatorAccountRoute: typeof OperatorAccountRoute
+  OperatorInquiriesRoute: typeof OperatorInquiriesRoute
+  OperatorListingsRoute: typeof OperatorListingsRoute
+  OperatorOnboardingRoute: typeof OperatorOnboardingRoute
+  OperatorPlansRoute: typeof OperatorPlansRoute
+  OperatorReviewsRoute: typeof OperatorReviewsRoute
+  OperatorsIdRoute: typeof OperatorsIdRoute
+  ReviewIdRoute: typeof ReviewIdRoute
+  TourIdRoute: typeof TourIdRoute
+  OperatorIndexRoute: typeof OperatorIndexRoute
+  OperatorInquiryIdRoute: typeof OperatorInquiryIdRoute
+  OperatorListingIdRoute: typeof OperatorListingIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +455,259 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/edit-profile': {
+      id: '/edit-profile'
+      path: '/edit-profile'
+      fullPath: '/edit-profile'
+      preLoaderRoute: typeof EditProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot': {
+      id: '/forgot'
+      path: '/forgot'
+      fullPath: '/forgot'
+      preLoaderRoute: typeof ForgotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inquiries': {
+      id: '/inquiries'
+      path: '/inquiries'
+      fullPath: '/inquiries'
+      preLoaderRoute: typeof InquiriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preferences': {
+      id: '/preferences'
+      path: '/preferences'
+      fullPath: '/preferences'
+      preLoaderRoute: typeof PreferencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request': {
+      id: '/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof RequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$id': {
+      id: '/chat/$id'
+      path: '/chat/$id'
+      fullPath: '/chat/$id'
+      preLoaderRoute: typeof ChatIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/destination/$id': {
+      id: '/destination/$id'
+      path: '/destination/$id'
+      fullPath: '/destination/$id'
+      preLoaderRoute: typeof DestinationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inquiry/$id': {
+      id: '/inquiry/$id'
+      path: '/inquiry/$id'
+      fullPath: '/inquiry/$id'
+      preLoaderRoute: typeof InquiryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/': {
+      id: '/operator/'
+      path: '/operator'
+      fullPath: '/operator/'
+      preLoaderRoute: typeof OperatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/account': {
+      id: '/operator/account'
+      path: '/operator/account'
+      fullPath: '/operator/account'
+      preLoaderRoute: typeof OperatorAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/inquiries': {
+      id: '/operator/inquiries'
+      path: '/operator/inquiries'
+      fullPath: '/operator/inquiries'
+      preLoaderRoute: typeof OperatorInquiriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/listings': {
+      id: '/operator/listings'
+      path: '/operator/listings'
+      fullPath: '/operator/listings'
+      preLoaderRoute: typeof OperatorListingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/onboarding': {
+      id: '/operator/onboarding'
+      path: '/operator/onboarding'
+      fullPath: '/operator/onboarding'
+      preLoaderRoute: typeof OperatorOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/plans': {
+      id: '/operator/plans'
+      path: '/operator/plans'
+      fullPath: '/operator/plans'
+      preLoaderRoute: typeof OperatorPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/reviews': {
+      id: '/operator/reviews'
+      path: '/operator/reviews'
+      fullPath: '/operator/reviews'
+      preLoaderRoute: typeof OperatorReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operators/$id': {
+      id: '/operators/$id'
+      path: '/operators/$id'
+      fullPath: '/operators/$id'
+      preLoaderRoute: typeof OperatorsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review/$id': {
+      id: '/review/$id'
+      path: '/review/$id'
+      fullPath: '/review/$id'
+      preLoaderRoute: typeof ReviewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tour/$id': {
+      id: '/tour/$id'
+      path: '/tour/$id'
+      fullPath: '/tour/$id'
+      preLoaderRoute: typeof TourIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/inquiry/$id': {
+      id: '/operator/inquiry/$id'
+      path: '/operator/inquiry/$id'
+      fullPath: '/operator/inquiry/$id'
+      preLoaderRoute: typeof OperatorInquiryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operator/listing/$id': {
+      id: '/operator/listing/$id'
+      path: '/operator/listing/$id'
+      fullPath: '/operator/listing/$id'
+      preLoaderRoute: typeof OperatorListingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EditProfileRoute: EditProfileRoute,
+  ExploreRoute: ExploreRoute,
+  ForgotRoute: ForgotRoute,
+  HelpRoute: HelpRoute,
+  InquiriesRoute: InquiriesRoute,
+  LoginRoute: LoginRoute,
+  MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRoute,
+  PreferencesRoute: PreferencesRoute,
+  ProfileRoute: ProfileRoute,
+  RequestRoute: RequestRoute,
+  SavedRoute: SavedRoute,
+  SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
+  ChatIdRoute: ChatIdRoute,
+  DestinationIdRoute: DestinationIdRoute,
+  InquiryIdRoute: InquiryIdRoute,
+  OperatorAccountRoute: OperatorAccountRoute,
+  OperatorInquiriesRoute: OperatorInquiriesRoute,
+  OperatorListingsRoute: OperatorListingsRoute,
+  OperatorOnboardingRoute: OperatorOnboardingRoute,
+  OperatorPlansRoute: OperatorPlansRoute,
+  OperatorReviewsRoute: OperatorReviewsRoute,
+  OperatorsIdRoute: OperatorsIdRoute,
+  ReviewIdRoute: ReviewIdRoute,
+  TourIdRoute: TourIdRoute,
+  OperatorIndexRoute: OperatorIndexRoute,
+  OperatorInquiryIdRoute: OperatorInquiryIdRoute,
+  OperatorListingIdRoute: OperatorListingIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
