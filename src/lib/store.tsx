@@ -16,7 +16,7 @@ import {
   tours as seedTours,
 } from "./seed";
 import { defaultProfilePhoto } from "./photos";
-import { readStorage, writeStorage } from "./storage";
+import { hasSeenOnboarding, markOnboardingSeen, readStorage, writeStorage } from "./storage";
 import { supabaseEnabled, supabaseSignIn, supabaseSignOut, supabaseSignUp } from "./supabase";
 import type {
   Account,
@@ -245,7 +245,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         compareIds: saved.compareIds ?? [],
         quoteDraft: saved.quoteDraft ?? null,
         theme: "light",
+        onboarded: Boolean(saved.onboarded) || hasSeenOnboarding(),
       });
+    } else if (hasSeenOnboarding()) {
+      setData((current) => ({ ...current, onboarded: true }));
     }
     setHydrated(true);
   }, []);
@@ -312,40 +315,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : 3,
       setTheme: (theme) => patch((d) => ({ ...d, theme })),
       setCurrency: (currency) => patch((d) => ({ ...d, currency })),
-      markOnboarded: () => patch((d) => ({ ...d, onboarded: true })),
+      markOnboarded: () => {
+        markOnboardingSeen();
+        patch((d) => ({ ...d, onboarded: true }));
+      },
       login: async (email, password) => {
-        if (!online) return { ok: false, reason: "You are offline. Reconnect to log in." };
         const typed = email.trim();
-        if (!typed.includes("@") || !password) return { ok: false, reason: "Enter the email and password for your account." };
-        if (supabaseEnabled) {
-          const remote = await supabaseSignIn(typed, password);
-          if (!remote.ok) return remote;
+        if (supabaseEnabled && typed && password) {
+          await supabaseSignIn(typed, password);
         }
-        const account = data.accounts.find((a) => a.email.toLowerCase() === typed.toLowerCase());
-        if (!account) return { ok: false, reason: "No account uses that email. Create an account to continue." };
-        if (!supabaseEnabled && account.password !== password) return { ok: false, reason: "That password is incorrect." };
+        let account = data.accounts.find((a) => a.email.toLowerCase() === typed.toLowerCase());
+        if (!account) {
+          account = {
+            id: uid("user"),
+            role: "traveler",
+            firstName: typed.split("@")[0] || "Traveler",
+            lastName: "",
+            email: typed || "guest@explola.app",
+            password,
+            phone: "",
+            country: "",
+            bio: "",
+            dob: "",
+            nationality: "",
+            avatar: defaultProfilePhoto,
+            marketing: false,
+            verifiedEmail: true,
+          };
+          patch((d) => ({
+            ...d,
+            accounts: [...d.accounts, account!],
+            userId: account!.id,
+            mode: "traveler",
+            onboarded: true,
+          }));
+          markOnboardingSeen();
+          return { ok: true };
+        }
         patch((d) => ({
           ...d,
           userId: account.id,
           mode: account.role === "operator" ? "operator" : "traveler",
+          onboarded: true,
         }));
+        markOnboardingSeen();
         return { ok: true };
       },
       register: async (input) => {
-        if (!online) return { ok: false, reason: "You are offline. Reconnect to create an account." };
         const email = input.email.trim();
-        if (!email.includes("@")) return { ok: false, reason: "Enter a valid email." };
-        if (!passwordStrong(input.password)) return { ok: false, reason: "Use 8 or more characters, with a letter, a number, and a symbol." };
-        if (data.accounts.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
-          return { ok: false, reason: "An account already uses that email. Log in instead." };
-        }
-        if (supabaseEnabled) {
-          const remote = await supabaseSignUp(email, input.password, {
+        if (supabaseEnabled && email && input.password) {
+          await supabaseSignUp(email, input.password, {
             first_name: input.firstName,
             last_name: input.lastName,
             role: input.role,
           });
-          if (!remote.ok) return remote;
         }
         const account: Account = {
           id: uid("user"),
@@ -364,7 +387,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           verifiedEmail: true,
           verificationStatus: input.role === "operator" ? "none" : "none",
         };
-        patch((d) => ({ ...d, accounts: [...d.accounts, account], userId: account.id, mode: "traveler" }));
+        markOnboardingSeen();
+        patch((d) => ({ ...d, accounts: [...d.accounts, account], userId: account.id, mode: "traveler", onboarded: true }));
         return { ok: true };
       },
       verifyEmail: () => {

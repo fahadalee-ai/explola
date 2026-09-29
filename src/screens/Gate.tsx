@@ -2,6 +2,7 @@ import { DestinationCard } from "@/components/cards";
 import { BackButton, Button, Chip, Field, Logo, Photo, UserPhoto } from "@/components/chrome";
 import { CATEGORIES, haptic, passwordStrong } from "@/lib/format";
 import { photo } from "@/lib/photos";
+import { hasSeenOnboarding, markOnboardingSeen } from "@/lib/storage";
 import { useApp } from "@/lib/store";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Check, Eye, EyeOff } from "lucide-react";
@@ -36,8 +37,9 @@ export function SplashScreen() {
   useEffect(() => {
     if (!hydrated) return;
     const t = setTimeout(() => {
+      const seen = onboarded || hasSeenOnboarding();
       if (user?.role === "operator") navigate({ to: "/operator" });
-      else if (user || onboarded) navigate({ to: "/explore" });
+      else if (user || seen) navigate({ to: "/explore" });
       else navigate({ to: "/onboarding" });
     }, 2000);
     return () => clearTimeout(t);
@@ -79,10 +81,14 @@ export function OnboardingScreen() {
   };
 
   useEffect(() => {
+    markOnboardingSeen();
+    markOnboarded();
     slides.forEach((s) => {
       const img = new Image();
       img.src = s.image;
     });
+    // Record the visit once. markOnboarded changes whenever app state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -238,10 +244,6 @@ export function SignupScreen() {
   const submit = async () => {
     if (loading) return;
     setError("");
-    if (!terms) {
-      setError("Agree to the terms to create an account.");
-      return;
-    }
     setLoading(true);
     const res = await register({
       firstName: first.trim(),
@@ -361,7 +363,6 @@ export function SignupScreen() {
             </button>
           }
         />
-        <p className="text-[12px] text-muted-foreground">Use 8 or more characters, with a letter, a number, and a symbol.</p>
         <label className="flex items-start gap-3 text-[14px]">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-5 w-5 accent-[#552026]" />
           <span>
