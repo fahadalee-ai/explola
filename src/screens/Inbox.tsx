@@ -1,16 +1,18 @@
 import { OperatorCard, TourCard } from "@/components/cards";
-import { BackButton, Button, Chip, EmptyState, Page, Segmented, TextArea, UserPhoto } from "@/components/chrome";
-import { money, relTime } from "@/lib/format";
+import { BackButton, Button, Chip, Dialog, EmptyState, Field, Page, Segmented, Sheet, TextArea, UserPhoto } from "@/components/chrome";
+import { MONTHS, money, relTime } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function SavedScreen() {
-  const { saved, user, tours, operators, collections, addCollection, setSavedCollection } = useApp();
+  const { saved, user, tours, operators, collections, addCollection, setSavedCollection, setAuthReturn } = useApp();
   const navigate = useNavigate();
   const [tab, setTab] = useState("tours");
   const [collection, setCollection] = useState("All");
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionName, setCollectionName] = useState("");
   const mine = saved.filter((s) => s.userId === user?.id);
   const toursSaved = mine.filter((s) => s.kind === "tour" && (collection === "All" || s.collection === collection));
   const opsSaved = mine.filter((s) => s.kind === "operator");
@@ -28,18 +30,22 @@ export function SavedScreen() {
                 {c}
               </Chip>
             ))}
-            <Chip
-              onClick={() => {
-                const name = window.prompt("Collection name");
-                if (name) addCollection(name);
-              }}
-            >
-              + Collection
-            </Chip>
+            <Chip onClick={() => setCollectionOpen(true)}>+ Collection</Chip>
           </div>
         )}
         <div className="mt-4 space-y-4">
-          {tab === "tours" && toursSaved.length === 0 && (
+          {!user && (
+            <EmptyState
+              title="Log in to see saved safaris"
+              body="Hearts you tap stay with your account on this device."
+              action="Log in"
+              onAction={() => {
+                setAuthReturn(window.location.pathname + window.location.search);
+                navigate({ to: "/login" });
+              }}
+            />
+          )}
+          {user && tab === "tours" && toursSaved.length === 0 && (
             <EmptyState title="Save trips you love" body="Tap the heart on a safari and it will wait for you here." action="Start exploring" onAction={() => navigate({ to: "/explore" })} />
           )}
           {tab === "tours" &&
@@ -68,7 +74,7 @@ export function SavedScreen() {
                 </div>
               );
             })}
-          {tab === "operators" && opsSaved.length === 0 && <EmptyState title="No operators saved" body="Save an operator to compare them later." action="Browse operators" onAction={() => navigate({ to: "/search" })} />}
+          {user && tab === "operators" && opsSaved.length === 0 && <EmptyState title="No operators saved" body="Save an operator to compare them later." action="Browse operators" onAction={() => navigate({ to: "/search", search: { tab: "operators" } })} />}
           {tab === "operators" &&
             opsSaved.map((s) => {
               const op = operators.find((o) => o.id === s.refId);
@@ -76,6 +82,23 @@ export function SavedScreen() {
             })}
         </div>
       </div>
+      <Sheet open={collectionOpen} onClose={() => setCollectionOpen(false)} title="New collection">
+        <div className="space-y-3 pb-6">
+          <Field label="Name" value={collectionName} onChange={(e) => setCollectionName(e.target.value)} placeholder="Anniversary ideas" />
+          <Button
+            full
+            disabled={!collectionName.trim()}
+            onClick={() => {
+              addCollection(collectionName.trim());
+              setCollection(collectionName.trim());
+              setCollectionName("");
+              setCollectionOpen(false);
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </Sheet>
     </Page>
   );
 }
@@ -89,8 +112,9 @@ const statusLabel: Record<string, string> = {
 };
 
 export function InquiriesScreen() {
-  const { inquiries, user, tours, operators, quotes } = useApp();
+  const { inquiries, user, tours, operators, quotes, setAuthReturn } = useApp();
   const navigate = useNavigate();
+  const [pane, setPane] = useState("quotes");
   const [tab, setTab] = useState("active");
   const mine = inquiries.filter((i) => i.userId === user?.id);
   const filtered = mine.filter((i) => {
@@ -101,12 +125,23 @@ export function InquiriesScreen() {
   return (
     <Page tabs="traveler">
       <div className="px-5 pt-safe">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-[32px]">Inquiries</h1>
-          <button className="text-[14px] font-semibold text-primary" onClick={() => navigate({ to: "/messages" })}>
-            Messages
-          </button>
+        <h1 className="font-display text-[32px]">Quotes</h1>
+        <div className="mt-4">
+          <Segmented
+            value={pane}
+            onChange={setPane}
+            options={[
+              { id: "quotes", label: "Quotes" },
+              { id: "messages", label: "Messages" },
+            ]}
+          />
         </div>
+        {pane === "messages" ? (
+          <div className="mt-4">
+            <MessagesScreen embedded />
+          </div>
+        ) : (
+          <>
         <div className="mt-4">
           <Segmented
             value={tab}
@@ -118,8 +153,18 @@ export function InquiriesScreen() {
             ]}
           />
         </div>
-        {!user && <EmptyState title="Log in to see inquiries" body="Quote requests live with your account." action="Log in" onAction={() => navigate({ to: "/login" })} />}
-        {user && filtered.length === 0 && <EmptyState title="No inquiries yet" body="When you request a quote, the conversation starts here." action="Request a quote" onAction={() => navigate({ to: "/request" })} />}
+        {!user && (
+          <EmptyState
+            title="Log in to see quotes"
+            body="Quote requests live with your account."
+            action="Log in"
+            onAction={() => {
+              setAuthReturn(window.location.pathname + window.location.search);
+              navigate({ to: "/login" });
+            }}
+          />
+        )}
+        {user && filtered.length === 0 && <EmptyState title="No quotes yet" body="When you request a quote, the conversation starts here." action="Request a quote" onAction={() => navigate({ to: "/request" })} />}
         <div className="mt-4 space-y-3">
           {filtered.map((inq) => {
             const tour = tours.find((t) => t.id === inq.tourId);
@@ -144,6 +189,8 @@ export function InquiriesScreen() {
             );
           })}
         </div>
+          </>
+        )}
       </div>
     </Page>
   );
@@ -153,14 +200,17 @@ export function InquiryDetailScreen({ id }: { id: string }) {
   const app = useApp();
   const navigate = useNavigate();
   const inq = app.inquiries.find((i) => i.id === id);
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [undoStatus, setUndoStatus] = useState<"sent" | "viewed" | "quoted" | "draft" | null>(null);
   useEffect(() => {
     if (inq?.unread) app.markInquiryRead(id);
   }, [id]);
   if (!inq) {
     return (
-      <div className="px-5 pt-safe">
-        <BackButton fallback="/inquiries" />
-        <p className="mt-4 text-muted-foreground">This inquiry is unavailable.</p>
+      <div className="min-h-dvh px-5 pt-safe">
+        <BackButton fallback="/inquiries" className="mt-2" />
+        <h1 className="mt-6 font-display text-[32px] leading-10">This quote is unavailable</h1>
+        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">It may have been removed from this device.</p>
       </div>
     );
   }
@@ -170,15 +220,23 @@ export function InquiryDetailScreen({ id }: { id: string }) {
   return (
     <div className="px-5 pt-safe pb-10">
       <BackButton fallback="/inquiries" />
-      <h1 className="mt-4 font-display text-[28px]">{tour?.title || "Your inquiry"}</h1>
+      <h1 className="mt-4 font-display text-[28px]">{tour?.title || "Your quote"}</h1>
       <p className="text-[13px] text-muted-foreground">{statusLabel[inq.status]} · {relTime(inq.createdAt)}</p>
-      <ol className="mt-4 space-y-2 text-[14px]">
-        {["sent", "viewed", "quoted", "closed"].map((s) => (
-          <li key={s} className={inq.status === s ? "font-semibold text-primary" : "text-muted-foreground"}>
-            {statusLabel[s]}
-          </li>
-        ))}
-      </ol>
+      {inq.status === "closed" ? (
+        <p className="mt-4 rounded-[14px] bg-sand px-3 py-3 text-[14px]">This quote is closed.</p>
+      ) : (
+        <ol className="mt-4 grid grid-cols-3 gap-2">
+          {(["sent", "viewed", "quoted"] as const).map((s, i) => {
+            const order = ["sent", "viewed", "quoted"];
+            const reached = order.indexOf(inq.status) >= i;
+            return (
+              <li key={s} className={`rounded-[12px] px-2 py-2 text-center text-[12px] font-semibold ${reached ? "bg-primary text-primary-foreground" : "bg-sand text-muted-foreground"}`}>
+                {i + 1}. {s === "quoted" ? "Quote" : statusLabel[s]}
+              </li>
+            );
+          })}
+        </ol>
+      )}
       <div className="mt-4 rounded-[16px] bg-sand p-4 text-[14px] leading-6">
         <p>{inq.adults} adults · {inq.travelerType} · {inq.lengthDays} days</p>
         <p>{inq.accommodation}</p>
@@ -203,6 +261,16 @@ export function InquiryDetailScreen({ id }: { id: string }) {
           );
         })}
       </div>
+      {inq.accepted && (
+        <section className="mt-6 rounded-[16px] bg-card p-4 shadow-warm">
+          <p className="eyebrow">Next step</p>
+          <h2 className="mt-1 font-display text-[22px]">Pay the operator directly</h2>
+          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+            Explola does not charge a booking fee. Agree the details in messages, then pay {app.operators.find((o) => o.id === inq.operatorIds[0])?.name || "the operator"} directly.
+            They typically reply within {app.operators.find((o) => o.id === inq.operatorIds[0])?.responseTime || "a day or two"}.
+          </p>
+        </section>
+      )}
       <div className="mt-6 space-y-2">
         <Button
           full
@@ -213,26 +281,76 @@ export function InquiryDetailScreen({ id }: { id: string }) {
         >
           Ask a question
         </Button>
-        <Button variant="secondary" full onClick={() => app.pushToast("Interest noted", "The operator can see you are ready to talk details.")}>
-          Accept quote interest
-        </Button>
-        <Button variant="tertiary" full onClick={() => { app.closeInquiry(inq.id); app.pushToast("Inquiry closed"); }}>
-          Close inquiry
-        </Button>
+        {inq.status === "quoted" && !inq.accepted && (
+          <Button
+            variant="secondary"
+            full
+            onClick={() => {
+              app.acceptInquiry(inq.id);
+              app.pushToast("The operator can see you are ready to talk");
+            }}
+          >
+            I'm ready to talk
+          </Button>
+        )}
+        {undoStatus && (
+          <Button
+            variant="tertiary"
+            full
+            onClick={() => {
+              app.setInquiryStatus(inq.id, undoStatus);
+              setUndoStatus(null);
+            }}
+          >
+            Undo close
+          </Button>
+        )}
+        {inq.status !== "closed" && (
+          <Button variant="tertiary" full onClick={() => setCloseOpen(true)}>
+            Close quote
+          </Button>
+        )}
       </div>
+      <Dialog
+        open={closeOpen}
+        danger
+        title="Close this quote?"
+        body="The operator will see it as closed. You can undo this from this screen."
+        confirm="Close quote"
+        onClose={() => setCloseOpen(false)}
+        onConfirm={() => {
+          if (inq.status !== "closed") setUndoStatus(inq.status === "draft" ? "draft" : inq.status);
+          app.closeInquiry(inq.id);
+          setCloseOpen(false);
+        }}
+      />
     </div>
   );
 }
 
-export function MessagesScreen() {
-  const { conversations, messages, operators, user, archiveConversation } = useApp();
+export function MessagesScreen({ embedded = false }: { embedded?: boolean }) {
+  const { conversations, messages, operators, user, archiveConversation, unarchiveConversation } = useApp();
   const navigate = useNavigate();
+  const [undoId, setUndoId] = useState<string | null>(null);
   const mine = conversations.filter((c) => c.userId === user?.id && !c.archived);
   return (
-    <div className="min-h-dvh px-5 pt-safe pb-10">
-      <BackButton fallback="/inquiries" />
-      <h1 className="mt-4 font-display text-[32px]">Messages</h1>
-      {mine.length === 0 && <EmptyState title="No messages" body="When you write to an operator, the thread appears here." />}
+    <div className={embedded ? "" : "min-h-dvh px-5 pt-safe pb-10"}>
+      {!embedded && <BackButton fallback="/inquiries" />}
+      {!embedded && <h1 className="mt-4 font-display text-[32px]">Messages</h1>}
+      {!user && <EmptyState title="Log in to see messages" body="Replies from operators stay with your account." action="Log in" onAction={() => navigate({ to: "/login" })} />}
+      {user && mine.length === 0 && <EmptyState title="No messages" body="When you write to an operator, the thread appears here." />}
+      {undoId && (
+        <button
+          type="button"
+          className="mt-3 w-full rounded-[14px] bg-sand px-3 py-3 text-left text-[14px] font-semibold"
+          onClick={() => {
+            unarchiveConversation(undoId);
+            setUndoId(null);
+          }}
+        >
+          Message archived. Undo
+        </button>
+      )}
       <ul className="mt-4">
         {mine.map((c) => {
           const op = operators.find((o) => o.id === c.operatorId);
@@ -252,7 +370,14 @@ export function MessagesScreen() {
                 </span>
                 {unread && <span className="h-2.5 w-2.5 rounded-full bg-gold" />}
               </button>
-              <button aria-label="Archive" className="text-[12px] font-semibold text-muted-foreground" onClick={() => archiveConversation(c.id)}>
+              <button
+                aria-label="Archive"
+                className="text-[12px] font-semibold text-muted-foreground"
+                onClick={() => {
+                  archiveConversation(c.id);
+                  setUndoId(c.id);
+                }}
+              >
                 Archive
               </button>
             </li>
@@ -271,7 +396,15 @@ export function ChatScreen({ id }: { id: string }) {
   useEffect(() => {
     app.markThreadRead(id);
   }, [id]);
-  if (!conv) return <p className="px-5 pt-safe">Conversation unavailable.</p>;
+  if (!conv) {
+    return (
+      <div className="min-h-dvh px-5 pt-safe">
+        <BackButton fallback="/inquiries" className="mt-2" />
+        <h1 className="mt-6 font-display text-[32px] leading-10">This conversation is unavailable</h1>
+        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">It may have been archived or removed.</p>
+      </div>
+    );
+  }
   const op = app.operators.find((o) => o.id === conv.operatorId);
   const thread = app.messages.filter((m) => m.conversationId === id);
   const fromTraveler = app.user?.operatorId !== conv.operatorId;
@@ -433,7 +566,7 @@ export function ReviewScreen({ operatorId, tourId }: { operatorId: string; tourI
               body,
               date: date || new Date().toISOString().slice(0, 10),
               tripType,
-              month: "Jan",
+              month: MONTHS[new Date().getMonth()] || "Jan",
               photos,
               recommend,
             });
@@ -450,8 +583,7 @@ export function ReviewScreen({ operatorId, tourId }: { operatorId: string; tourI
 export function NotificationsScreen() {
   const { notifications, user, markAllRead, markRead, removeNotification } = useApp();
   const navigate = useNavigate();
-  const own = user ? notifications.filter((n) => n.userId === user.id) : [];
-  const mine = own.length ? own : notifications.filter((n) => n.userId === "user-amara");
+  const mine = user ? notifications.filter((n) => n.userId === user.id) : [];
   const today = mine.filter((n) => Date.now() - new Date(n.createdAt).getTime() < 86400000);
   const earlier = mine.filter((n) => !today.includes(n));
   const group = (title: string, items: typeof mine) =>
@@ -501,7 +633,15 @@ export function NotificationsScreen() {
           Mark all as read
         </button>
       </div>
-      {mine.length === 0 && <EmptyState title="You are all caught up" body="Quotes, messages and trip updates will land here." />}
+      {!user && (
+        <EmptyState
+          title="Log in to see notifications"
+          body="Quote updates and messages stay with your account."
+          action="Log in"
+          onAction={() => navigate({ to: "/login" })}
+        />
+      )}
+      {user && mine.length === 0 && <EmptyState title="You are all caught up" body="Quotes, messages and trip updates will land here." />}
       {group("Today", today)}
       {group("Earlier", earlier)}
     </div>

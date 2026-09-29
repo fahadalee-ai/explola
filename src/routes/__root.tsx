@@ -18,22 +18,18 @@ import { asset } from "../lib/utils";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 text-center">
+      <p className="eyebrow">Explola</p>
+      <h1 className="mt-2 font-display text-[32px] leading-10">This page is not here</h1>
+      <p className="mt-2 max-w-xs text-[15px] leading-6 text-muted-foreground">
+        The link may be out of date. You can go back to browsing safaris.
+      </p>
+      <Link
+        to="/explore"
+        className="mt-6 inline-flex min-h-[52px] items-center justify-center rounded-[14px] bg-primary px-6 text-[15px] font-semibold text-primary-foreground"
+      >
+        Browse safaris
+      </Link>
     </div>
   );
 }
@@ -64,12 +60,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             Try again
           </button>
-          <a
-            href="/"
+          <Link
+            to="/explore"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
-          </a>
+            Browse safaris
+          </Link>
         </div>
       </div>
     </div>
@@ -116,11 +112,6 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=JSON.parse(localStorage.getItem("explola-v1")||"{}").theme||"system";var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}`,
-          }}
-        />
         <HeadContent />
       </head>
       <body>

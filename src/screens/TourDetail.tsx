@@ -1,14 +1,14 @@
 import { TourCard } from "@/components/cards";
-import { Button, Photo, Rating, Segmented, Sheet, Tag, Verified } from "@/components/chrome";
+import { BackButton, Button, Photo, Rating, Segmented, Sheet, Tag, Verified } from "@/components/chrome";
 import { money } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import { Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import useEmblaCarousel from "embla-carousel-react";
-import { Check, ChevronLeft, ChevronRight, Heart, Info, MapPin, Share2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Heart, Info, MapPin, Scale, Share2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function TourDetailScreen({ id }: { id: string }) {
-  const { tours, operators, reviews, currency, isSaved, toggleSaved, pushToast, requireAuth, markHelpful } = useApp();
+  const { tours, operators, reviews, currency, isSaved, toggleSaved, isCompared, toggleCompare, pushToast, requireAuth, markHelpful } = useApp();
   const navigate = useNavigate();
   const router = useRouter();
   const canBack = useCanGoBack();
@@ -36,16 +36,19 @@ export function TourDetailScreen({ id }: { id: string }) {
   }, [emblaApi, photo]);
   if (!tour) {
     return (
-      <div className="px-5 pt-safe">
-        <button type="button" onClick={() => router.history.back()} className="mb-4 text-[14px] font-semibold">
-          Back
-        </button>
-        <p className="text-muted-foreground">This safari is no longer listed.</p>
+      <div className="min-h-dvh px-5 pt-safe">
+        <BackButton fallback="/explore" className="mt-2" />
+        <h1 className="mt-6 font-display text-[32px] leading-10">This safari is no longer listed</h1>
+        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">It may have been removed. You can browse other safaris.</p>
+        <Button className="mt-6" onClick={() => navigate({ to: "/explore" })}>
+          Browse safaris
+        </Button>
       </div>
     );
   }
   const op = operators.find((o) => o.id === tour.operatorId);
   const saved = isSaved("tour", tour.id);
+  const compared = isCompared(tour.id);
   const tourReviews = reviews.filter((r) => r.tourId === tour.id && !r.pending);
   const shown = tourReviews.filter((r) => reviewFilter === "All" || r.tripType === reviewFilter || r.month === reviewFilter);
   const similar = tours.filter((t) => t.id !== tour.id && t.destinationIds.some((d) => tour.destinationIds.includes(d))).slice(0, 6);
@@ -370,8 +373,11 @@ export function TourDetailScreen({ id }: { id: string }) {
       </div>
 
       <div className="fixed bottom-0 left-1/2 z-40 flex w-full max-w-[430px] -translate-x-1/2 items-center gap-3 border-t border-border bg-card px-5 py-3 pb-safe">
-        <button aria-label="Save" onClick={() => toggleSaved("tour", tour.id)} className="flex h-[52px] w-[52px] items-center justify-center rounded-[14px] border border-border">
+        <button aria-label={saved ? "Remove from saved" : "Save"} onClick={() => toggleSaved("tour", tour.id)} className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border border-border">
           <Heart className={saved ? "fill-[#552026] text-[#552026]" : ""} />
+        </button>
+        <button aria-label={compared ? "Remove from compare" : "Compare"} onClick={() => toggleCompare(tour.id)} className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border border-border">
+          <Scale className={compared ? "text-[#552026]" : ""} />
         </button>
         <Button
           full

@@ -28,7 +28,6 @@ export function SearchScreen({ initialQuery = "", initialTab }: { initialQuery?:
   const [filters, setFilters] = useState<Filters>(emptyFilters());
   const [open, setOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [map, setMap] = useState(false);
   const count = activeFilterCount(filters);
 
   const suggestions = useMemo(() => {
@@ -120,7 +119,7 @@ export function SearchScreen({ initialQuery = "", initialTab }: { initialQuery?:
         <div className="px-5 pt-4">
           <Segmented
             value={tab}
-            onChange={setTab}
+            onChange={(id) => setTab(id as "tours" | "operators" | "destinations")}
             options={[
               { id: "tours", label: "Tours" },
               { id: "operators", label: "Operators" },
@@ -135,24 +134,12 @@ export function SearchScreen({ initialQuery = "", initialTab }: { initialQuery?:
               Filters
               {count > 0 && <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] text-primary-foreground">{count}</span>}
             </button>
-            <button onClick={() => setMap(!map)} className="ml-auto min-h-11 rounded-full bg-sand px-4 text-[13px] font-semibold">
-              {map ? "List" : "Map"}
-            </button>
           </div>
           <p className="mt-3 text-[13px] text-muted-foreground">
             {tab === "tours" ? results.length : tab === "operators" ? opResults.length : destResults.length} results
           </p>
 
-          {map && tab !== "operators" ? (
-            <div className="relative mt-3 h-80 overflow-hidden rounded-[20px] bg-[#E7D3B0]">
-              <svg viewBox="0 0 100 100" className="h-full w-full" aria-label="Map of Africa">
-                <path d="M48 8c8 2 14 8 16 16 4 2 8 8 8 14-2 6-1 10 2 16-4 8-6 16-4 24 2 6-2 12-8 16-6 2-8 6-14 8-8-2-12-8-18-8-6-6-8-14-6-22 2-8-2-14 0-22 2-8 8-16 16-22 2-4 6-6 8-4z" fill="#C4A574" />
-              </svg>
-              {(tab === "destinations" ? destResults : destinations.filter((d) => results.some((t) => t.destinationIds.includes(d.id)))).map((d) => (
-                <span key={d.id} className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-white" style={{ left: `${d.pin.x}%`, top: `${d.pin.y}%` }} title={d.name} />
-              ))}
-            </div>
-          ) : tab === "tours" ? (
+          {tab === "tours" ? (
             results.length === 0 ? (
               <EmptyState title="No safaris match your filters" body="Try a wider budget, a different month, or clear a filter." action="Reset filters" onAction={() => { setFilters(emptyFilters()); setSubmitted(""); setQuery(""); }} />
             ) : (
@@ -163,11 +150,17 @@ export function SearchScreen({ initialQuery = "", initialTab }: { initialQuery?:
               </div>
             )
           ) : tab === "operators" ? (
-            <div className="mt-3 space-y-3">
-              {opResults.map((o) => (
-                <OperatorCard key={o.id} operator={o} layout="list" />
-              ))}
-            </div>
+            opResults.length === 0 ? (
+              <EmptyState title="No operators match" body="Try another name, or clear the search to see verified operators." action="Clear search" onAction={() => { setQuery(""); setSubmitted(""); }} />
+            ) : (
+              <div className="mt-3 space-y-3">
+                {opResults.map((o) => (
+                  <OperatorCard key={o.id} operator={o} layout="list" />
+                ))}
+              </div>
+            )
+          ) : destResults.length === 0 ? (
+            <EmptyState title="No destinations match" body="Try a country or park name, or clear the search." action="Clear search" onAction={() => { setQuery(""); setSubmitted(""); }} />
           ) : (
             <div className="mt-3 flex flex-wrap gap-3">
               {destResults.map((d) => (

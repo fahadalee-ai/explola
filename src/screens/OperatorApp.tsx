@@ -1,4 +1,4 @@
-import { Button, Dialog, OperatorTabs, Page, Segmented, TextArea } from "@/components/chrome";
+import { BackButton, Button, Dialog, OperatorTabs, Page, Segmented, TextArea } from "@/components/chrome";
 import { money, relTime, uid } from "@/lib/format";
 import { plans } from "@/lib/seed";
 import { useApp } from "@/lib/store";

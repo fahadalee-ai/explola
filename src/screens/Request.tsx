@@ -4,16 +4,8 @@ import { useApp } from "@/lib/store";
 import type { StayLevel } from "@/lib/types";
 import { useNavigate } from "@tanstack/react-router";
 import { CalendarRange, Check, ChevronLeft, Clock, MapPin, MessageSquare, Users } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as Slider from "@radix-ui/react-slider";
-
-const STEPS = [
-  { id: "trip", label: "Trip" },
-  { id: "who", label: "Travelers" },
-  { id: "style", label: "Style" },
-  { id: "note", label: "Note" },
-  { id: "send", label: "Send" },
-];
 
 export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: string; destinationId?: string; operatorId?: string }) {
   const app = useApp();
@@ -21,7 +13,8 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
   const goBack = useGoBack();
   const tour = app.tours.find((t) => t.id === tourId);
   const destPreset = destinationId || tour?.destinationIds[0] || "";
-  const [step, setStep] = useState(0);
+  const [more, setMore] = useState(false);
+  const [sending, setSending] = useState(false);
   const [dests, setDests] = useState<string[]>(destPreset ? [destPreset] : []);
   const [flexible, setFlexible] = useState(true);
   const [start, setStart] = useState("");
@@ -44,6 +37,61 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [inquiryId, setInquiryId] = useState("");
+  const restored = useRef(false);
+
+  useEffect(() => {
+    if (!app.hydrated || restored.current) return;
+    restored.current = true;
+    const draft = app.quoteDraft;
+    if (!draft || draft.tourId !== tourId || (draft.destinationId || "") !== (destinationId || "") || (draft.operatorId || "") !== (operatorId || "")) return;
+    setDests(draft.dests);
+    setFlexible(draft.flexible);
+    setStart(draft.start);
+    setEnd(draft.end);
+    setLength(draft.length);
+    setAdults(draft.adults);
+    setChildren(draft.children);
+    setAges(draft.ages);
+    setTravelerType(draft.travelerType);
+    setStay(draft.stay);
+    setBudget(draft.budget);
+    setInterests(draft.interests);
+    setOccasion(draft.occasion);
+    setNeeds(draft.needs);
+    setMessage(draft.message);
+    setPhone(draft.phone);
+    setContact(draft.contact);
+    setOps(draft.ops);
+    setConsent(draft.consent);
+    if (draft.occasion || draft.needs || draft.message) setMore(true);
+  }, [app.hydrated, app.quoteDraft, tourId, destinationId, operatorId]);
+
+  const persistDraft = () => {
+    app.saveQuoteDraft({
+      tourId,
+      destinationId,
+      operatorId,
+      dests,
+      flexible,
+      start,
+      end,
+      length,
+      adults,
+      children,
+      ages,
+      travelerType,
+      stay,
+      budget,
+      interests,
+      occasion,
+      needs,
+      message,
+      phone,
+      contact,
+      ops,
+      consent,
+    });
+  };
 
   const operator = app.operators.find((o) => o.id === (tour?.operatorId || operatorId));
   const chosenDests = dests.map((id) => app.destinations.find((d) => d.id === id)).filter(Boolean);
@@ -55,14 +103,13 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
     else if (!max || list.length < max) set([...list, id]);
   };
 
-  const next = () => {
-    if (step === 0 && dests.length === 0) return setError("Choose at least one destination.");
-    if (step === 4 && (ops.length === 0 || !consent)) return setError("Choose an operator and confirm consent.");
-    setError("");
-    setStep(step + 1);
-  };
-
   const send = () => {
+    if (sending) return;
+    if (!app.online) return setError("You are offline. Reconnect to send this quote request.");
+    if (dests.length === 0) return setError("Choose at least one destination.");
+    if (ops.length === 0 || !consent) return setError("Choose an operator and confirm you agree to be contacted.");
+    setError("");
+    setSending(true);
     const id = app.sendInquiry({
       tourId: tour?.id,
       destinationIds: dests,
@@ -85,6 +132,7 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
       phone,
       contactMethod: contact,
     });
+    setSending(false);
     if (id) {
       haptic(20);
       setInquiryId(id);
@@ -102,8 +150,18 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
             <p className="eyebrow">Request a quote</p>
             <h1 className="mt-2 font-display text-[32px] leading-10">{tour?.title || "Plan this trip with a verified operator"}</h1>
             <p className="mt-2 text-[15px] leading-6 text-muted-foreground">Log in so the operator can reply with a private itinerary and a clear price range.</p>
-            <Button full className="mt-5" onClick={() => navigate({ to: "/login" })}>
+            <Button
+              full
+              className="mt-5"
+              onClick={() => {
+                app.setAuthReturn(window.location.pathname + window.location.search);
+                navigate({ to: "/login" });
+              }}
+            >
               Log in to continue
+            </Button>
+            <Button variant="tertiary" full className="mt-2" onClick={() => navigate({ to: "/signup" })}>
+              Create an account
             </Button>
           </div>
         </div>
@@ -201,7 +259,7 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
 
         <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 space-y-1 border-t border-border bg-card px-5 py-3 pb-safe">
           <Button full onClick={() => navigate({ to: "/inquiries" })}>
-            View my inquiries
+            View my quotes
           </Button>
           <Button variant="text" full onClick={() => navigate({ to: "/explore" })}>
             Keep exploring
@@ -211,14 +269,6 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
     );
   }
 
-  const copy = [
-    ["Where and when", "Tell us the shape of the trip. You can stay flexible."],
-    ["Who is coming", "A private quote depends on who is traveling."],
-    ["How you want to stay", "Camp, lodge, or something in between."],
-    ["A note for the operator", "The details that make this trip yours."],
-    ["Review and send", "Choose who should prepare your quote."],
-  ][step];
-
   return (
     <div className="min-h-dvh bg-background pb-28">
       <div className="px-5 pt-safe">
@@ -226,19 +276,12 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
           <button
             type="button"
             aria-label="Go back"
-            onClick={() => (step === 0 ? goBack() : setStep(step - 1))}
+            onClick={goBack}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-card"
           >
             <ChevronLeft size={18} />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow">Step {step + 1} of 5</p>
-            <div className="mt-2 flex gap-1">
-              {STEPS.map((s, i) => (
-                <span key={s.id} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-gold" : "bg-sand"}`} />
-              ))}
-            </div>
-          </div>
+          <h1 className="min-w-0 flex-1 font-display text-[28px] leading-8">Request a quote</h1>
         </div>
 
         {tour && (
@@ -256,14 +299,12 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
           </div>
         )}
 
-        <h1 className="mt-5 font-display text-[30px] leading-9">{copy[0]}</h1>
-        <p className="mt-1 text-[15px] leading-6 text-muted-foreground">{copy[1]}</p>
+        <p className="mt-4 text-[15px] leading-6 text-muted-foreground">Tell us where, when, and who is traveling. Style and notes are optional.</p>
         {error && <p className="mt-3 rounded-[14px] bg-destructive/10 px-3 py-2 text-[13px] text-destructive">{error}</p>}
       </div>
 
       <div className="mt-4 px-5">
-        {step === 0 && (
-          <div className="space-y-4">
+        <div className="space-y-4">
             <section className="rounded-[20px] bg-card p-4 shadow-warm">
               <p className="eyebrow">Destinations</p>
               <div className="mt-3 flex gap-3 overflow-x-auto py-1 no-scrollbar">
@@ -313,10 +354,6 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
                 <Stepper label="Trip length (days)" value={length} min={2} max={21} onChange={setLength} />
               </div>
             </section>
-          </div>
-        )}
-
-        {step === 1 && (
           <section className="space-y-4 rounded-[20px] bg-card p-4 shadow-warm">
             <Stepper label="Adults" value={adults} min={1} onChange={setAdults} />
             <Stepper label="Children" value={children} onChange={setChildren} />
@@ -332,9 +369,23 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
               </div>
             </div>
           </section>
-        )}
-
-        {step === 2 && (
+          <section className="rounded-[20px] bg-card p-4 shadow-warm">
+            <p className="font-display text-[22px]">
+              {money(budget[0], app.currency)} – {money(budget[1], app.currency)}
+            </p>
+            <p className="text-[12px] text-muted-foreground">Budget per person, before flights</p>
+            <Slider.Root className="relative mt-3 flex h-11 items-center" min={800} max={12000} step={100} value={budget} onValueChange={(v) => setBudget([v[0], v[1]])}>
+              <Slider.Track className="relative h-1.5 grow rounded-full bg-sand">
+                <Slider.Range className="absolute h-full bg-primary" />
+              </Slider.Track>
+              <Slider.Thumb aria-label="Budget minimum" className="h-7 w-7 rounded-full border-2 border-primary bg-card" />
+              <Slider.Thumb aria-label="Budget maximum" className="h-7 w-7 rounded-full border-2 border-primary bg-card" />
+            </Slider.Root>
+          </section>
+          <button type="button" className="text-[14px] font-semibold text-primary" onClick={() => setMore(!more)}>
+            {more ? "Hide style and note" : "Add style and a note"}
+          </button>
+          {more && (
           <div className="space-y-4">
             <section className="rounded-[20px] bg-card p-4 shadow-warm">
               <p className="eyebrow">Stay</p>
@@ -345,17 +396,6 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
                   </Chip>
                 ))}
               </div>
-              <p className="mt-4 font-display text-[22px]">
-                {money(budget[0], app.currency)} – {money(budget[1], app.currency)}
-              </p>
-              <p className="text-[12px] text-muted-foreground">Per person, before flights</p>
-              <Slider.Root className="relative mt-3 flex h-11 items-center" min={800} max={12000} step={100} value={budget} onValueChange={(v) => setBudget([v[0], v[1]])}>
-                <Slider.Track className="relative h-1.5 grow rounded-full bg-sand">
-                  <Slider.Range className="absolute h-full bg-primary" />
-                </Slider.Track>
-                <Slider.Thumb aria-label="Budget minimum" className="h-7 w-7 rounded-full border-2 border-primary bg-card" />
-                <Slider.Thumb aria-label="Budget maximum" className="h-7 w-7 rounded-full border-2 border-primary bg-card" />
-              </Slider.Root>
             </section>
             <section className="rounded-[20px] bg-card p-4 shadow-warm">
               <p className="eyebrow">Interests</p>
@@ -373,10 +413,6 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
                 <TextArea label="Accessibility or dietary needs" value={needs} onChange={(e) => setNeeds(e.target.value)} />
               </div>
             </section>
-          </div>
-        )}
-
-        {step === 3 && (
           <section className="space-y-4 rounded-[20px] bg-card p-4 shadow-warm">
             <TextArea label="Notes for the operator" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="River crossings if the herds are there, a slower pace, a birthday dinner..." />
             <Field label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -391,26 +427,9 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
               </div>
             </div>
           </section>
-        )}
-
-        {step === 4 && (
-          <div className="space-y-4">
-            <section className="overflow-hidden rounded-[20px] bg-card shadow-warm">
-              {heroImage && <Photo src={heroImage} alt="" className="h-36" />}
-              <div className="space-y-1 p-4 text-[14px] leading-6">
-                <p className="font-display text-[20px]">{tour?.title || "Custom safari"}</p>
-                <p>{chosenDests.map((d) => d!.name).join(", ")}</p>
-                <p>{flexible ? "Flexible dates" : `${start || "Start"} to ${end || "end"}`} · {length} days</p>
-                <p>
-                  {adults} adults{children ? `, ${children} children` : ""} · {travelerType}
-                </p>
-                <p>
-                  {stay} · {money(budget[0], app.currency)} – {money(budget[1], app.currency)}
-                </p>
-                {message && <p className="pt-1 text-muted-foreground">{message}</p>}
-              </div>
-            </section>
-            <section className="rounded-[20px] bg-card p-4 shadow-warm">
+          </div>
+          )}
+          <section className="rounded-[20px] bg-card p-4 shadow-warm">
               <p className="eyebrow">Send to up to 3 operators</p>
               <div className="mt-3 space-y-2">
                 {app.operators
@@ -437,11 +456,10 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
               </div>
               <label className="mt-4 flex items-start gap-3 text-[14px] leading-5">
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-5 w-5 accent-[#552026]" />
-                Operators may contact me about this inquiry. I understand Explola does not take payment.
+                Operators may contact me about this quote. I understand Explola does not take payment.
               </label>
             </section>
-          </div>
-        )}
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-1/2 z-40 flex w-full max-w-[430px] -translate-x-1/2 gap-2 border-t border-border bg-card px-5 py-3 pb-safe">
@@ -449,20 +467,15 @@ export function RequestScreen({ tourId, destinationId, operatorId }: { tourId?: 
           variant="tertiary"
           className="shrink-0 whitespace-nowrap px-4"
           onClick={() => {
+            persistDraft();
             app.pushToast("Draft saved on this device");
           }}
         >
           Save draft
         </Button>
-        {step < 4 ? (
-          <Button full onClick={next}>
-            Continue
-          </Button>
-        ) : (
-          <Button full disabled={!consent || ops.length === 0} onClick={send}>
-            Send inquiry
-          </Button>
-        )}
+        <Button full disabled={sending || !app.online} loading={sending} onClick={send}>
+          Send quote request
+        </Button>
       </div>
     </div>
   );

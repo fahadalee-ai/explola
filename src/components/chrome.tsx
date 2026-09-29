@@ -517,7 +517,7 @@ function TabItem({ to, label, icon: Icon, active }: { to: string; label: string;
     <Link
       to={to}
       aria-current={active ? "page" : undefined}
-      className={cn("flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] font-medium", active ? "text-primary" : "text-muted-foreground")}
+      className={cn("flex flex-1 flex-col items-center gap-0.5 py-1 text-[12px] font-medium", active ? "text-primary" : "text-muted-foreground")}
     >
       <Icon size={22} strokeWidth={active ? 2.4 : 1.75} className={active ? "fill-primary/15" : ""} />
       {label}
@@ -536,11 +536,11 @@ export function TravelerTabs() {
         <TabItem to="/explore" label="Explore" icon={Home} active={item("/explore")} />
         <TabItem to="/search" label="Search" icon={Search} active={item("/search")} />
         <TabItem to="/saved" label="Saved" icon={Heart} active={item("/saved")} />
-        <TabItem to="/inquiries" label="Inquiries" icon={MessageSquare} active={item("/inquiries")} />
+        <TabItem to="/inquiries" label="Quotes" icon={MessageSquare} active={item("/inquiries") || item("/messages") || item("/chat") || item("/inquiry")} />
         <Link
           to="/profile"
           aria-current={profileOn ? "page" : undefined}
-          className={cn("flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] font-medium", profileOn ? "text-primary" : "text-muted-foreground")}
+          className={cn("flex flex-1 flex-col items-center gap-0.5 py-1 text-[12px] font-medium", profileOn ? "text-primary" : "text-muted-foreground")}
         >
           <UserPhoto src={user?.avatar} name={user?.firstName} className={cn("h-[22px] w-[22px]", profileOn && "ring-2 ring-primary")} />
           Profile
@@ -603,15 +603,24 @@ export function OfflineBar() {
   if (online) return null;
   return (
     <div className="bg-warning px-5 py-2 text-center text-[13px] font-medium text-warning-foreground" role="status">
-      You are offline. Some actions will wait until you reconnect.
+      You are offline. Saving, quotes, and login are paused until you reconnect.
     </div>
   );
 }
 
 export function Page({ children, tabs }: { children: ReactNode; tabs?: "traveler" | "operator" }) {
+  const { compareIds } = useApp();
   return (
     <div className={cn("min-h-dvh", tabs && "pb-28")}>
       {children}
+      {tabs === "traveler" && compareIds.length > 0 && (
+        <Link
+          to="/compare"
+          className="fixed bottom-[4.5rem] left-1/2 z-40 flex min-h-11 w-[calc(100%-2.5rem)] max-w-[390px] -translate-x-1/2 items-center justify-center rounded-full bg-primary px-4 text-[14px] font-semibold text-primary-foreground"
+        >
+          Compare {compareIds.length} {compareIds.length === 1 ? "safari" : "safaris"}
+        </Link>
+      )}
       {tabs === "traveler" && <TravelerTabs />}
       {tabs === "operator" && <OperatorTabs />}
     </div>

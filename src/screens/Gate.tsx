@@ -1,9 +1,9 @@
 import { DestinationCard } from "@/components/cards";
-import { BackButton, Button, Chip, Field, Logo, Photo, ToggleRow, UserPhoto } from "@/components/chrome";
-import { CATEGORIES, COUNTRIES, haptic, passwordStrong } from "@/lib/format";
+import { BackButton, Button, Chip, Field, Logo, Photo, UserPhoto } from "@/components/chrome";
+import { CATEGORIES, haptic, passwordStrong } from "@/lib/format";
 import { photo } from "@/lib/photos";
 import { useApp } from "@/lib/store";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Check, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -31,13 +31,17 @@ const slides = [
 ];
 
 export function SplashScreen() {
-  const { hydrated } = useApp();
+  const { hydrated, onboarded, user } = useApp();
   const navigate = useNavigate();
   useEffect(() => {
     if (!hydrated) return;
-    const t = setTimeout(() => navigate({ to: "/onboarding" }), 2000);
+    const t = setTimeout(() => {
+      if (user?.role === "operator") navigate({ to: "/operator" });
+      else if (user || onboarded) navigate({ to: "/explore" });
+      else navigate({ to: "/onboarding" });
+    }, 2000);
     return () => clearTimeout(t);
-  }, [hydrated, navigate]);
+  }, [hydrated, onboarded, user, navigate]);
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#552026] to-[#3A1418] px-8 text-center">
@@ -108,7 +112,7 @@ export function OnboardingScreen() {
           <p className="mt-3 max-w-[22rem] text-[16px] leading-6 text-[#F7EEE3]" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
             {slide.body}
           </p>
-          <div className="mt-5 flex items-center gap-2" aria-hidden>
+          <div className="mt-5 flex items-center gap-2" aria-label={`Slide ${i + 1} of ${slides.length}`}>
             {slides.map((_, n) => (
               <span key={n} className={`h-2 rounded-full ${n === i ? "w-6 bg-[#E3B36F]" : "w-2 bg-white/50"}`} />
             ))}
@@ -136,22 +140,40 @@ export function OnboardingScreen() {
 }
 
 export function LoginScreen() {
-  const { login, biometricLogin, biometricUserId, enableBiometric, pushToast, accounts } = useApp();
+  const { login, accounts, authReturn, setAuthReturn } = useApp();
   const navigate = useNavigate();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [bioAsk, setBioAsk] = useState(false);
 
   const go = () => {
     const account = accounts.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
-    navigate({ to: account?.role === "operator" ? "/operator" : "/explore" });
+    const ret = authReturn;
+    setAuthReturn(null);
+    if (account?.role === "operator") {
+      navigate({ to: "/operator" });
+      return;
+    }
+    if (ret) {
+      const url = new URL(ret, window.location.origin);
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      let path = url.pathname;
+      if (base && path.startsWith(base)) path = path.slice(base.length) || "/";
+      const search = Object.fromEntries(url.searchParams.entries());
+      if (path && path !== "/" && path !== "/login" && path !== "/signup" && path !== "/onboarding") {
+        void router.navigate({ to: path, search } as never);
+        return;
+      }
+    }
+    navigate({ to: "/explore" });
   };
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError("");
     const res = await login(email, password);
@@ -161,8 +183,7 @@ export function LoginScreen() {
       return;
     }
     haptic(16);
-    if (!biometricUserId) setBioAsk(true);
-    else go();
+    go();
   };
 
   return (
@@ -189,107 +210,47 @@ export function LoginScreen() {
       <button type="button" onClick={() => navigate({ to: "/forgot" })} className="mt-3 text-[14px] font-semibold text-primary">
         Forgot password?
       </button>
-      <Button full className="mt-6" type="submit" loading={loading}>
+      <Button full className="mt-6" type="submit" loading={loading} disabled={loading}>
         Log In
       </Button>
-      {biometricUserId && (
-        <Button
-          type="button"
-          variant="tertiary"
-          full
-          className="mt-2"
-          onClick={() => {
-            if (biometricLogin()) go();
-            else pushToast("Biometric login is unavailable");
-          }}
-        >
-          Use Face ID / Fingerprint
-        </Button>
-      )}
-      <SocialRow onNotice={(title) => pushToast(title, "Connect Supabase Auth to enable social login.")} />
       <p className="mt-6 mb-8 text-center text-[14px]">
         New to Explola?{" "}
         <button type="button" className="font-semibold text-primary" onClick={() => navigate({ to: "/signup" })}>
           Create an account
         </button>
       </p>
-      {bioAsk && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#2B1416]/40">
-          <div className="m-4 w-full max-w-[400px] rounded-[20px] bg-card p-5">
-            <h2 className="font-display text-[22px]">Enable biometric login?</h2>
-            <p className="mt-2 text-[14px] text-muted-foreground">Use Face ID or your fingerprint the next time you open Explola on this device.</p>
-            <div className="mt-4 space-y-2">
-              <Button
-                full
-                onClick={() => {
-                  enableBiometric(true);
-                  go();
-                }}
-              >
-                Enable
-              </Button>
-              <Button variant="text" full onClick={go}>
-                Not now
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </form>
   );
 }
 
-function SocialRow({ onNotice }: { onNotice: (title: string) => void }) {
-  return (
-    <>
-      <div className="my-6 flex items-center gap-3 text-[12px] tracking-wide text-muted-foreground uppercase">
-        <span className="h-px flex-1 bg-border" /> or continue with <span className="h-px flex-1 bg-border" />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="tertiary" onClick={() => onNotice("Continue with Apple")}>
-          Apple
-        </Button>
-        <Button type="button" variant="tertiary" onClick={() => onNotice("Continue with Google")}>
-          Google
-        </Button>
-      </div>
-    </>
-  );
-}
-
 export function SignupScreen() {
-  const { register, verifyEmail, user, destinations } = useApp();
+  const { register, user, destinations } = useApp();
   const navigate = useNavigate();
   const [first, setFirst] = useState("");
-  const [last, setLast] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [country, setCountry] = useState("");
-  const [countryQ, setCountryQ] = useState("");
-  const [openCountries, setOpenCountries] = useState(false);
-  const [phone, setPhone] = useState("");
   const [terms, setTerms] = useState(false);
-  const [marketing, setMarketing] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"form" | "otp" | "done">("form");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const countries = COUNTRIES.filter((c) => c.toLowerCase().includes(countryQ.toLowerCase()));
+  const [step, setStep] = useState<"form" | "done">("form");
 
   const submit = async () => {
+    if (loading) return;
     setError("");
+    if (!terms) {
+      setError("Agree to the terms to create an account.");
+      return;
+    }
     setLoading(true);
     const res = await register({
-      firstName: first,
-      lastName: last,
+      firstName: first.trim(),
+      lastName: "",
       email,
       password,
-      phone,
-      country,
-      marketing,
+      phone: "",
+      country: "",
+      marketing: false,
       role: "traveler",
     });
     setLoading(false);
@@ -297,50 +258,9 @@ export function SignupScreen() {
       setError(res.reason);
       return;
     }
-    setStep("otp");
+    haptic(20);
+    setStep("done");
   };
-
-  if (step === "otp") {
-    return (
-      <div className="min-h-dvh px-5 pt-safe pb-10">
-        <BackButton fallback="/onboarding" className="mt-2" />
-        <h1 className="mt-4 font-display text-[32px]">Check your email</h1>
-        <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
-          We sent a 6-digit code to {email}. In this preview, enter any 6 digits.
-        </p>
-        <div className="mt-6 flex justify-between gap-2">
-          {otp.map((v, i) => (
-            <input
-              key={i}
-              inputMode="numeric"
-              maxLength={1}
-              value={v}
-              aria-label={`Digit ${i + 1}`}
-              onChange={(e) => {
-                const next = [...otp];
-                next[i] = e.target.value.replace(/\D/g, "").slice(-1);
-                setOtp(next);
-                const el = e.target.nextElementSibling as HTMLInputElement | null;
-                if (next[i] && el) el.focus();
-              }}
-              className="h-14 w-full rounded-[14px] bg-sand text-center text-[20px] font-semibold outline-none focus:border focus:border-gold"
-            />
-          ))}
-        </div>
-        <Button
-          full
-          className="mt-6"
-          onClick={() => {
-            verifyEmail();
-            haptic(20);
-            setStep("done");
-          }}
-        >
-          Verify email
-        </Button>
-      </div>
-    );
-  }
 
   if (step === "done") {
     const name = (user?.firstName || first).trim();
@@ -360,7 +280,7 @@ export function SignupScreen() {
             <h1 className="mt-2 font-display text-[36px] leading-[42px] text-white" style={{ textShadow: "0 2px 16px rgba(0,0,0,0.45)" }}>
               You are in{name ? `, ${name}` : ""}
             </h1>
-            <p className="mt-2 text-[15px] leading-6 text-[#F7EEE3]">Your email is confirmed. The next part is the trip itself.</p>
+            <p className="mt-2 text-[15px] leading-6 text-[#F7EEE3]">Your account is ready. The next part is the trip itself.</p>
           </div>
         </div>
 
@@ -407,11 +327,11 @@ export function SignupScreen() {
         </div>
 
         <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 space-y-1 border-t border-border bg-card px-5 py-3 pb-safe">
-          <Button full onClick={() => navigate({ to: "/preferences" })}>
-            Set trip preferences
+          <Button full onClick={() => navigate({ to: "/explore" })}>
+            Start exploring
           </Button>
-          <Button variant="text" full onClick={() => navigate({ to: "/explore" })}>
-            Skip for now
+          <Button variant="text" full onClick={() => navigate({ to: "/preferences" })}>
+            Set trip preferences
           </Button>
         </div>
       </div>
@@ -427,14 +347,12 @@ export function SignupScreen() {
       <p className="mt-1 text-[15px] text-muted-foreground">Start planning your African adventure</p>
       {error && <p className="mt-4 rounded-[14px] bg-destructive/10 px-3 py-3 text-[13px] text-destructive">{error}</p>}
       <div className="mt-5 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="First name" value={first} onChange={(e) => setFirst(e.target.value)} />
-          <Field label="Last name" value={last} onChange={(e) => setLast(e.target.value)} />
-        </div>
-        <Field label="Email" type="text" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label="First name" autoComplete="given-name" value={first} onChange={(e) => setFirst(e.target.value)} />
+        <Field label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <Field
           label="Password"
           type={show ? "text" : "password"}
+          autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           trailing={
@@ -443,50 +361,7 @@ export function SignupScreen() {
             </button>
           }
         />
-        <Field
-          label="Confirm password"
-          type={showConfirm ? "text" : "password"}
-          autoComplete="new-password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          trailing={
-            <button type="button" aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"} onClick={() => setShowConfirm(!showConfirm)}>
-              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          }
-        />
-        <div>
-          <Field
-            label="Country"
-            value={openCountries ? countryQ : country}
-            placeholder="Search countries"
-            onFocus={() => setOpenCountries(true)}
-            onChange={(e) => {
-              setCountryQ(e.target.value);
-              setOpenCountries(true);
-            }}
-          />
-          {openCountries && (
-            <ul className="mt-1 max-h-40 overflow-auto rounded-[14px] border border-border bg-card">
-              {countries.map((c) => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 text-left text-[14px]"
-                    onClick={() => {
-                      setCountry(c);
-                      setCountryQ(c);
-                      setOpenCountries(false);
-                    }}
-                  >
-                    {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <Field label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <p className="text-[12px] text-muted-foreground">Use 8 or more characters, with a letter, a number, and a symbol.</p>
         <label className="flex items-start gap-3 text-[14px]">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-5 w-5 accent-[#552026]" />
           <span>
@@ -494,12 +369,10 @@ export function SignupScreen() {
             <button type="button" className="font-semibold underline" onClick={() => navigate({ to: "/help" })}>Privacy Policy</button>
           </span>
         </label>
-        <ToggleRow label="Send me safari inspiration and offers" checked={marketing} onChange={setMarketing} />
       </div>
-      <Button full className="mt-4" loading={loading} onClick={submit}>
+      <Button full className="mt-4" loading={loading} disabled={loading} onClick={submit}>
         Create Account
       </Button>
-      <SocialRow onNotice={() => setError("Social login needs a connected Supabase project.")} />
       <p className="mt-6 text-center text-[14px]">
         Already have an account?{" "}
         <button type="button" className="font-semibold text-primary" onClick={() => navigate({ to: "/login" })}>
@@ -515,18 +388,10 @@ export function ForgotScreen() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [seconds, setSeconds] = useState(30);
   const [error, setError] = useState("");
   const account = app.accounts.find((a) => a.email.toLowerCase() === email.trim().toLowerCase());
-
-  useEffect(() => {
-    if (step !== 1 || seconds <= 0) return;
-    const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [step, seconds]);
 
   return (
     <div className="min-h-dvh px-5 pt-safe pb-10">
@@ -536,9 +401,9 @@ export function ForgotScreen() {
       {step === 0 && (
         <>
           <h1 className="mt-4 font-display text-[32px]">Reset your password</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground">We will email you a 6-digit code.</p>
+          <p className="mt-2 text-[15px] leading-6 text-muted-foreground">Enter the email on your account. You can choose a new password on the next screen.</p>
           <div className="mt-6">
-            <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Field label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {error && <p className="mt-3 text-[13px] text-destructive">{error}</p>}
           <Button
@@ -548,59 +413,20 @@ export function ForgotScreen() {
             onClick={() => {
               if (!account) return setError("We could not find an account with that email.");
               setError("");
-              setSeconds(30);
               setStep(1);
             }}
           >
-            Send reset code
+            Continue
           </Button>
         </>
       )}
       {step === 1 && (
         <>
-          <h1 className="mt-4 font-display text-[32px]">Check your email</h1>
-          <p className="mt-2 text-[15px] leading-6 text-muted-foreground">A code is on its way to {email}. In this preview, any 6 digits will do.</p>
-          <Button variant="tertiary" className="mt-6" disabled={seconds > 0} onClick={() => setSeconds(30)}>
-            {seconds > 0 ? `Resend in ${seconds}s` : "Resend code"}
-          </Button>
-          <Button full className="mt-3" onClick={() => setStep(2)}>
-            Enter code
-          </Button>
-        </>
-      )}
-      {step === 2 && (
-        <>
-          <h1 className="mt-4 font-display text-[32px]">Enter the code</h1>
-          <div className="mt-6 flex gap-2">
-            {otp.map((v, i) => (
-              <input
-                key={i}
-                inputMode="numeric"
-                maxLength={1}
-                value={v}
-                aria-label={`Digit ${i + 1}`}
-                onChange={(e) => {
-                  const next = [...otp];
-                  next[i] = e.target.value.replace(/\D/g, "").slice(-1);
-                  setOtp(next);
-                  const el = e.target.nextElementSibling as HTMLInputElement | null;
-                  if (next[i] && el) el.focus();
-                }}
-                className="h-14 w-full rounded-[14px] bg-sand text-center text-[20px] font-semibold outline-none"
-              />
-            ))}
-          </div>
-          <Button full className="mt-6" disabled={otp.join("").length < 6} onClick={() => setStep(3)}>
-            Continue
-          </Button>
-        </>
-      )}
-      {step === 3 && (
-        <>
           <h1 className="mt-4 font-display text-[32px]">Choose a new password</h1>
+          <p className="mt-2 text-[15px] text-muted-foreground">Use 8 or more characters, with a letter, a number, and a symbol.</p>
           <div className="mt-6 space-y-4">
-            <Field label="New password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <Field label="Confirm password" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={confirm && confirm !== password ? "Passwords do not match" : ""} />
+            <Field label="New password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Field label="Confirm password" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={confirm && confirm !== password ? "Passwords do not match" : ""} />
           </div>
           <Button
             full
@@ -609,7 +435,7 @@ export function ForgotScreen() {
             onClick={() => {
               const err = app.resetPassword(email, password);
               if (err) setError(err);
-              else setStep(4);
+              else setStep(2);
             }}
           >
             Update password
@@ -617,13 +443,13 @@ export function ForgotScreen() {
           {error && <p className="mt-3 text-[13px] text-destructive">{error}</p>}
         </>
       )}
-      {step === 4 && (
+      {step === 2 && (
         <div className="mt-16">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success text-3xl text-white animate-pop">✓</div>
           <h1 className="mt-6 font-display text-[32px]">Password updated</h1>
           <p className="mt-2 text-muted-foreground">You can log in with your new password.</p>
           <Button full className="mt-8" onClick={() => navigate({ to: "/login" })}>
-            Back to Login
+            Back to login
           </Button>
         </div>
       )}
@@ -632,12 +458,23 @@ export function ForgotScreen() {
 }
 
 export function PreferencesScreen() {
-  const { setPrefs, pushToast } = useApp();
+  const { setPrefs, pushToast, prefs, hydrated } = useApp();
   const navigate = useNavigate();
-  const [interests, setInterests] = useState<string[]>([]);
-  const [countries, setCountries] = useState<string[]>([]);
-  const [budget, setBudget] = useState("$3,000 – $6,000");
-  const [timeframe, setTimeframe] = useState("Next 12 months");
+  const [interests, setInterests] = useState<string[]>(prefs?.interests ?? []);
+  const [countries, setCountries] = useState<string[]>(prefs?.countries ?? []);
+  const [budget, setBudget] = useState(prefs?.budget || "$3,000 – $6,000");
+  const [timeframe, setTimeframe] = useState(prefs?.timeframe || "Next 12 months");
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!hydrated || loaded) return;
+    if (prefs) {
+      setInterests(prefs.interests);
+      setCountries(prefs.countries);
+      setBudget(prefs.budget);
+      setTimeframe(prefs.timeframe);
+    }
+    setLoaded(true);
+  }, [hydrated, loaded, prefs]);
   const dests = ["Tanzania", "Kenya", "South Africa", "Botswana", "Namibia", "Uganda", "Rwanda", "Zambia", "Zanzibar"];
   const toggle = (list: string[], v: string, set: (n: string[]) => void) => set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   return (

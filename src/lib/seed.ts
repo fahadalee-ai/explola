@@ -2036,9 +2036,9 @@ export const reviews: Review[] = [
 ];
 
 export const faqs: Faq[] = [
-  { id: "f1", group: "Inquiries", q: "Is this a booking checkout?", a: "No. Explola is a discovery and inquiry platform. You request a personalized quote and the operator replies with an itinerary and a clear price. You arrange payment directly with them." },
-  { id: "f2", group: "Inquiries", q: "How many operators can I contact?", a: "You can send one inquiry to up to three operators. If you start from a listing, that operator is included and you may add two more." },
-  { id: "f3", group: "Inquiries", q: "How fast will I hear back?", a: "Verified operators aim to reply within 24 to 48 hours. Response time is shown on each profile." },
+  { id: "f1", group: "Quotes", q: "Is this a booking checkout?", a: "No. Explola is a discovery and quote platform. You request a personalized quote and the operator replies with an itinerary and a clear price. You arrange payment directly with them." },
+  { id: "f2", group: "Quotes", q: "How many operators can I contact?", a: "You can send one quote request to up to three operators. If you start from a listing, that operator is included and you may add two more." },
+  { id: "f3", group: "Quotes", q: "How fast will I hear back?", a: "Verified operators aim to reply within 24 to 48 hours. Response time is shown on each profile." },
   { id: "f4", group: "Verification", q: "What does Verified Operator mean?", a: "Explola reviews a trade licence, proof of insurance where it is required, and sample itineraries. We also look at how the operator handles guests. Verification is renewed each year." },
   { id: "f5", group: "Verification", q: "Can I review an operator?", a: "Yes, after you have an inquiry with that operator that reached a quote or was closed. Reviews are marked as verified travelers and may be held briefly for moderation." },
   { id: "f6", group: "Pricing", q: "Why is the price a range?", a: "Safari prices move with season, camp, group size and flights. The range is an honest estimate. Your quote is the exact price for your dates." },

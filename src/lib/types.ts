@@ -183,6 +183,33 @@ export type Inquiry = {
   status: InquiryStatus;
   createdAt: string;
   unread: boolean;
+  /** Traveler told the operator they want to talk through the quoted price. */
+  accepted?: boolean;
+};
+
+export type QuoteDraft = {
+  tourId?: string;
+  destinationId?: string;
+  operatorId?: string;
+  dests: string[];
+  flexible: boolean;
+  start: string;
+  end: string;
+  length: number;
+  adults: number;
+  children: number;
+  ages: string;
+  travelerType: string;
+  stay: StayLevel;
+  budget: [number, number];
+  interests: string[];
+  occasion: string;
+  needs: string;
+  message: string;
+  phone: string;
+  contact: string;
+  ops: string[];
+  consent: boolean;
 };
 
 export type Quote = {

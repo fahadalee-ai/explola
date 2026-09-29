@@ -29,6 +29,7 @@ import type {
   Operator,
   Quote,
   Review,
+  QuoteDraft,
   SavedItem,
   Subscription,
   ThemeMode,
@@ -65,6 +66,8 @@ type Persisted = {
   tickets: Ticket[];
   helpful: Record<string, boolean>;
   reviewReplies: Record<string, string>;
+  compareIds: string[];
+  quoteDraft: QuoteDraft | null;
 };
 
 const defaultPrefs: Record<string, boolean> = {
@@ -81,7 +84,7 @@ const defaultPrefs: Record<string, boolean> = {
 function fresh(): Persisted {
   return {
     onboarded: false,
-    theme: "system",
+    theme: "light",
     currency: "USD",
     userId: null,
     mode: "traveler",
@@ -118,6 +121,8 @@ function fresh(): Persisted {
     tickets: [],
     helpful: {},
     reviewReplies: {},
+    compareIds: [],
+    quoteDraft: null,
   };
 }
 
@@ -131,6 +136,7 @@ type Store = Persisted & {
   online: boolean;
   toasts: Toast[];
   authPrompt: string | null;
+  authReturn: string | null;
   unreadCount: number;
   setTheme: (t: ThemeMode) => void;
   setCurrency: (c: Currency) => void;
@@ -160,18 +166,26 @@ type Store = Persisted & {
   toggleNotif: (key: string) => void;
   requireAuth: (reason?: string) => boolean;
   closeAuthPrompt: () => void;
+  setAuthReturn: (path: string | null) => void;
   pushToast: (title: string, body?: string) => void;
   isSaved: (kind: "tour" | "operator", id: string) => boolean;
   toggleSaved: (kind: "tour" | "operator", id: string) => void;
+  isCompared: (id: string) => boolean;
+  toggleCompare: (id: string) => void;
+  saveQuoteDraft: (draft: QuoteDraft) => void;
+  clearQuoteDraft: () => void;
   setSavedCollection: (id: string, collection: string) => void;
   addCollection: (name: string) => void;
   sendInquiry: (draft: Omit<Inquiry, "id" | "userId" | "createdAt" | "status" | "unread">) => string | null;
   closeInquiry: (id: string) => void;
+  setInquiryStatus: (id: string, status: Inquiry["status"]) => void;
+  acceptInquiry: (id: string) => void;
   markInquiryRead: (id: string) => void;
   sendQuote: (q: Omit<Quote, "id" | "createdAt">) => void;
   ensureConversation: (operatorId: string, inquiryId?: string) => string | null;
   sendMessage: (conversationId: string, text: string, image?: string) => void;
   archiveConversation: (id: string) => void;
+  unarchiveConversation: (id: string) => void;
   markThreadRead: (conversationId: string) => void;
   markAllRead: () => void;
   markRead: (id: string) => void;
@@ -192,8 +206,8 @@ type Store = Persisted & {
 };
 
 function notificationsFor(list: AppNotification[], userId: string | null) {
-  const own = userId ? list.filter((item) => item.userId === userId) : [];
-  return own.length ? own : list.filter((item) => item.userId === "user-amara");
+  if (!userId) return [];
+  return list.filter((item) => item.userId === userId);
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -204,6 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(true);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
+  const [authReturn, setAuthReturnState] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = readStorage<Persisted>();
@@ -227,6 +242,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...seedNotifications.filter((item) => !(saved.notifications ?? []).some((savedItem) => savedItem.id === item.id)),
           ...(saved.notifications ?? []),
         ],
+        compareIds: saved.compareIds ?? [],
+        quoteDraft: saved.quoteDraft ?? null,
+        theme: "light",
       });
     }
     setHydrated(true);
@@ -237,19 +255,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [data, hydrated]);
 
   useEffect(() => {
-    const root = document.documentElement;
-    const apply = () => {
-      const dark =
-        data.theme === "dark" ||
-        (data.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      root.classList.toggle("dark", dark);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#1C1012" : "#FBF6EE");
-    };
-    apply();
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, [data.theme]);
+    document.documentElement.classList.remove("dark");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#FBF6EE");
+  }, []);
 
   useEffect(() => {
     const sync = () => setOnline(navigator.onLine);
@@ -295,6 +303,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       online,
       toasts,
       authPrompt,
+      authReturn,
       unreadCount: notificationsFor(data.notifications, data.userId).filter((n) => !n.read).length,
       prefs: data.userId ? (data.prefsByUser[data.userId] ?? null) : null,
       listingLimit:
@@ -305,33 +314,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrency: (currency) => patch((d) => ({ ...d, currency })),
       markOnboarded: () => patch((d) => ({ ...d, onboarded: true })),
       login: async (email, password) => {
+        if (!online) return { ok: false, reason: "You are offline. Reconnect to log in." };
         const typed = email.trim();
-        let account = data.accounts.find((a) => a.email.toLowerCase() === typed.toLowerCase());
-        if (!account) {
-          account = {
-            id: uid("user"),
-            role: "traveler",
-            firstName: typed.split("@")[0] || "Traveler",
-            lastName: "",
-            email: typed || "guest@explola.app",
-            password,
-            phone: "",
-            country: "",
-            bio: "",
-            dob: "",
-            nationality: "",
-            avatar: defaultProfilePhoto,
-            marketing: false,
-            verifiedEmail: true,
-          };
-          patch((d) => ({
-            ...d,
-            accounts: [...d.accounts, account!],
-            userId: account!.id,
-            mode: "traveler",
-          }));
-          return { ok: true };
+        if (!typed.includes("@") || !password) return { ok: false, reason: "Enter the email and password for your account." };
+        if (supabaseEnabled) {
+          const remote = await supabaseSignIn(typed, password);
+          if (!remote.ok) return remote;
         }
+        const account = data.accounts.find((a) => a.email.toLowerCase() === typed.toLowerCase());
+        if (!account) return { ok: false, reason: "No account uses that email. Create an account to continue." };
+        if (!supabaseEnabled && account.password !== password) return { ok: false, reason: "That password is incorrect." };
         patch((d) => ({
           ...d,
           userId: account.id,
@@ -340,19 +332,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { ok: true };
       },
       register: async (input) => {
+        if (!online) return { ok: false, reason: "You are offline. Reconnect to create an account." };
+        const email = input.email.trim();
+        if (!email.includes("@")) return { ok: false, reason: "Enter a valid email." };
+        if (!passwordStrong(input.password)) return { ok: false, reason: "Use 8 or more characters, with a letter, a number, and a symbol." };
+        if (data.accounts.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
+          return { ok: false, reason: "An account already uses that email. Log in instead." };
+        }
         if (supabaseEnabled) {
-          await supabaseSignUp(input.email, input.password, {
+          const remote = await supabaseSignUp(email, input.password, {
             first_name: input.firstName,
             last_name: input.lastName,
             role: input.role,
           });
+          if (!remote.ok) return remote;
         }
         const account: Account = {
           id: uid("user"),
           role: input.role,
           firstName: input.firstName.trim(),
           lastName: input.lastName.trim(),
-          email: input.email.trim(),
+          email,
           password: input.password,
           phone: input.phone,
           country: input.country,
@@ -361,7 +361,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           nationality: "",
           avatar: defaultProfilePhoto,
           marketing: input.marketing,
-          verifiedEmail: false,
+          verifiedEmail: true,
           verificationStatus: input.role === "operator" ? "none" : "none",
         };
         patch((d) => ({ ...d, accounts: [...d.accounts, account], userId: account.id, mode: "traveler" }));
@@ -408,12 +408,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       deleteAccount: () => {
         if (!user) return;
+        const id = user.id;
         patch((d) => ({
           ...d,
-          accounts: d.accounts.filter((a) => a.id !== user.id),
+          accounts: d.accounts.filter((a) => a.id !== id),
           userId: null,
           mode: "traveler",
-          saved: d.saved.filter((s) => s.userId !== user.id),
+          saved: d.saved.filter((s) => s.userId !== id),
+          inquiries: d.inquiries.filter((i) => i.userId !== id),
+          quotes: d.quotes.filter((q) => d.inquiries.find((i) => i.id === q.inquiryId)?.userId !== id),
+          conversations: d.conversations.filter((c) => c.userId !== id),
+          messages: d.messages.filter((m) => d.conversations.find((c) => c.id === m.conversationId)?.userId !== id),
+          notifications: d.notifications.filter((n) => n.userId !== id),
+          prefsByUser: Object.fromEntries(Object.entries(d.prefsByUser).filter(([key]) => key !== id)),
+          compareIds: [],
+          quoteDraft: null,
+          biometricUserId: d.biometricUserId === id ? null : d.biometricUserId,
         }));
       },
       setMode: (mode) => patch((d) => ({ ...d, mode })),
@@ -432,14 +442,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleNotif: (key) => patch((d) => ({ ...d, notifPrefs: { ...d.notifPrefs, [key]: !d.notifPrefs[key] } })),
       requireAuth: (reason = "Log in to continue") => {
         if (data.userId) return true;
+        if (typeof window !== "undefined") setAuthReturnState(window.location.pathname + window.location.search);
         setAuthPrompt(reason);
         return false;
       },
       closeAuthPrompt: () => setAuthPrompt(null),
+      setAuthReturn: (path) => setAuthReturnState(path),
       pushToast,
       isSaved: (kind, id) => data.saved.some((s) => s.userId === data.userId && s.kind === kind && s.refId === id),
       toggleSaved: (kind, refId) => {
+        if (!online) {
+          pushToast("You are offline", "Reconnect to save or remove a trip.");
+          return;
+        }
         if (!data.userId) {
+          if (typeof window !== "undefined") setAuthReturnState(window.location.pathname + window.location.search);
           setAuthPrompt("Log in to save trips and operators");
           return;
         }
@@ -456,8 +473,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
         patch((d) => ({ ...d, saved: d.saved.map((s) => (s.id === id ? { ...s, collection } : s)) })),
       addCollection: (name) =>
         patch((d) => ({ ...d, collections: d.collections.includes(name) ? d.collections : [...d.collections, name] })),
-      sendInquiry: (draft) => {
+      isCompared: (id) => data.compareIds.includes(id),
+      toggleCompare: (id) => {
+        if (!online) {
+          pushToast("You are offline", "Reconnect to update your comparison.");
+          return;
+        }
         if (!data.userId) {
+          if (typeof window !== "undefined") setAuthReturnState(window.location.pathname + window.location.search);
+          setAuthPrompt("Log in to compare safaris");
+          return;
+        }
+        const has = data.compareIds.includes(id);
+        if (!has && data.compareIds.length >= 3) {
+          pushToast("You can compare up to 3 safaris", "Remove one to add another.");
+          return;
+        }
+        patch((d) => ({ ...d, compareIds: has ? d.compareIds.filter((x) => x !== id) : [...d.compareIds, id] }));
+        pushToast(has ? "Removed from compare" : "Added to compare");
+      },
+      saveQuoteDraft: (draft) => patch((d) => ({ ...d, quoteDraft: draft })),
+      clearQuoteDraft: () => patch((d) => ({ ...d, quoteDraft: null })),
+      sendInquiry: (draft) => {
+        if (!online) {
+          pushToast("You are offline", "Reconnect to send this quote request.");
+          return null;
+        }
+        if (!data.userId) {
+          if (typeof window !== "undefined") setAuthReturnState(window.location.pathname + window.location.search);
           setAuthPrompt("Log in to request a quote");
           return null;
         }
@@ -470,7 +513,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           unread: false,
           createdAt: todayISO(),
         };
-        patch((d) => ({ ...d, inquiries: [inquiry, ...d.inquiries] }));
+        patch((d) => ({ ...d, inquiries: [inquiry, ...d.inquiries], quoteDraft: null }));
         draft.operatorIds.forEach((opId) => {
           const owner = data.operators.find((o) => o.id === opId)?.ownerId;
           if (owner) {
@@ -489,6 +532,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...d,
           inquiries: d.inquiries.map((i) => (i.id === id ? { ...i, status: "closed" } : i)),
         })),
+      setInquiryStatus: (id, status) =>
+        patch((d) => ({
+          ...d,
+          inquiries: d.inquiries.map((i) => (i.id === id ? { ...i, status } : i)),
+        })),
+      acceptInquiry: (id) => {
+        const inquiry = data.inquiries.find((i) => i.id === id);
+        if (!inquiry) return;
+        patch((d) => ({
+          ...d,
+          inquiries: d.inquiries.map((i) => (i.id === id ? { ...i, accepted: true } : i)),
+        }));
+        inquiry.operatorIds.forEach((opId) => {
+          const owner = data.operators.find((o) => o.id === opId)?.ownerId;
+          if (owner) {
+            notify(owner, {
+              type: "inquiry",
+              title: "Traveler is ready to talk",
+              body: `${user?.firstName ?? "A traveler"} wants to go through the quoted price.`,
+              href: `/operator/inquiry/${id}`,
+            });
+          }
+        });
+      },
       markInquiryRead: (id) =>
         patch((d) => ({
           ...d,
@@ -552,6 +619,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       archiveConversation: (id) =>
         patch((d) => ({ ...d, conversations: d.conversations.map((c) => (c.id === id ? { ...c, archived: true } : c)) })),
+      unarchiveConversation: (id) =>
+        patch((d) => ({ ...d, conversations: d.conversations.map((c) => (c.id === id ? { ...c, archived: false } : c)) })),
       markThreadRead: (conversationId) =>
         patch((d) => ({
           ...d,
@@ -665,7 +734,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pushToast("Message sent", "Our trust team replies within one working day.");
       },
     };
-  }, [data, hydrated, online, toasts, authPrompt, user]);
+  }, [data, hydrated, online, toasts, authPrompt, authReturn, user]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

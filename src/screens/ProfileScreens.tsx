@@ -1,4 +1,4 @@
-import { Button, Dialog, Header, TravelerTabs, UserPhoto } from "@/components/chrome";
+import { Button, Dialog, Field, Header, TravelerTabs, UserPhoto } from "@/components/chrome";
 import { COUNTRIES, passwordChecks } from "@/lib/format";
 import { defaultProfilePhoto } from "@/lib/photos";
 import { useApp } from "@/lib/store";
@@ -46,7 +46,7 @@ export function ProfileScreen() {
               </button>
               <button type="button" onClick={() => navigate({ to: "/inquiries" })} className="rounded-[16px] bg-sand px-3 py-3 text-left">
                 <span className="block font-display text-[22px]">{inquiryCount}</span>
-                <span className="text-[12px] text-muted-foreground">Inquiries</span>
+                <span className="text-[12px] text-muted-foreground">Quotes</span>
               </button>
             </div>
           </div>
@@ -54,7 +54,13 @@ export function ProfileScreen() {
           <div className="rounded-[24px] bg-card p-5 shadow-warm">
             <p className="font-display text-[28px] leading-9">Browse as a guest</p>
             <p className="mt-2 text-[15px] leading-6 text-muted-foreground">Log in to save trips, request quotes, and keep your plans in one place.</p>
-            <Button className="mt-4" onClick={() => navigate({ to: "/login" })}>
+            <Button
+              className="mt-4"
+              onClick={() => {
+                app.setAuthReturn(window.location.pathname + window.location.search);
+                navigate({ to: "/login" });
+              }}
+            >
               Log in
             </Button>
           </div>
@@ -64,7 +70,7 @@ export function ProfileScreen() {
           {user && <Row icon={UserRound} label="Edit profile" hint={user.email} to="/edit-profile" />}
           {user && <Row icon={SlidersHorizontal} label="Trip preferences" hint="Interests, budget, and timing" to="/preferences" />}
           <Row icon={Bookmark} label="Saved" hint="Safaris you want to come back to" to="/saved" />
-          <Row icon={MessageSquare} label="Inquiries" hint="Quotes and replies" to="/inquiries" />
+          <Row icon={MessageSquare} label="Quotes" hint="Prices and replies" to="/inquiries" />
           <Row icon={Bell} label="Notifications" to="/notifications" />
           <Row icon={Settings} label="Settings" to="/settings" />
           <Row icon={LifeBuoy} label="Help and support" to="/help" />
@@ -79,7 +85,7 @@ export function ProfileScreen() {
       <Dialog
         open={logoutOpen}
         title="Log out?"
-        body="You can keep browsing. Saved trips and inquiries stay on this device."
+        body="You can keep browsing. Saved trips and quotes stay on this device."
         confirm="Log out"
         onClose={() => setLogoutOpen(false)}
         onConfirm={() => {
@@ -94,7 +100,8 @@ export function ProfileScreen() {
 }
 
 export function EditProfileScreen() {
-  const { user, updateUser, pushToast } = useApp();
+  const { user, updateUser, pushToast, setAuthReturn } = useApp();
+  const navigate = useNavigate();
   const [form, setForm] = useState(() => ({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -105,7 +112,23 @@ export function EditProfileScreen() {
     nationality: user?.nationality || "",
     avatar: user?.avatar || defaultProfilePhoto,
   }));
-  if (!user) return <p className="px-5 pt-safe">Log in to edit your profile.</p>;
+  if (!user) {
+    return (
+      <div className="min-h-dvh px-5 pt-safe">
+        <Header title="Edit profile" fallback="/profile" />
+        <p className="mt-4 text-[15px] leading-6 text-muted-foreground">Log in to edit your name, photo, and contact details.</p>
+        <Button
+          className="mt-4"
+          onClick={() => {
+            setAuthReturn(window.location.pathname + window.location.search);
+            navigate({ to: "/login" });
+          }}
+        >
+          Log in
+        </Button>
+      </div>
+    );
+  }
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   return (
     <div className="px-5 pt-safe pb-10">
@@ -166,11 +189,13 @@ export function SettingsScreen() {
     <div className="px-5 pt-safe pb-10">
       <Header title="Settings" />
       <h2 className="mt-2 font-display text-[20px]">Account</h2>
-      <div className="mt-2 space-y-2">
-        <input placeholder="Current password" type="password" className="h-12 w-full rounded-[14px] bg-sand px-3" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
-        <input placeholder="New password" type="password" className="h-12 w-full rounded-[14px] bg-sand px-3" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
+      <div className="mt-2 space-y-3">
+        <Field label="Current password" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
+        <Field label="New password" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
         <p className="text-[12px] text-muted-foreground">
-          {passwordChecks(pw.next).length ? "Length ok. " : "Use 8+ characters, a letter, number and symbol."}
+          {passwordChecks(pw.next).length && passwordChecks(pw.next).letter && passwordChecks(pw.next).number && passwordChecks(pw.next).symbol
+            ? "Password meets the rules."
+            : "Use 8 or more characters, with a letter, a number, and a symbol."}
         </p>
         {pwError && <p className="text-[12px] text-destructive">{pwError}</p>}
         <Button
@@ -198,7 +223,7 @@ export function SettingsScreen() {
         open={deleteOpen}
         danger
         title="Delete your account?"
-        body="This removes your profile, saved trips and inquiries from this device. It cannot be undone."
+        body="This removes your profile, saved trips, quotes, and messages from this device. It cannot be undone."
         confirm="Delete account"
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => {
@@ -214,7 +239,7 @@ export function HelpScreen() {
   const { faqs, addTicket, pushToast } = useApp();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
-  const [topic, setTopic] = useState("Booking and inquiries");
+  const [topic, setTopic] = useState("Quotes and messages");
   const [message, setMessage] = useState("");
   const [report, setReport] = useState("");
   const groups = [...new Set(faqs.map((f) => f.group))];
@@ -242,7 +267,7 @@ export function HelpScreen() {
       </section>
       <h2 className="mt-6 font-display text-[20px]">Contact support</h2>
       <select className="mt-2 h-12 w-full rounded-[14px] bg-sand px-3" value={topic} onChange={(e) => setTopic(e.target.value)}>
-        {["Booking and inquiries", "Verification", "Pricing", "Safety"].map((t) => (
+        {["Quotes and messages", "Verification", "Pricing", "Safety"].map((t) => (
           <option key={t}>{t}</option>
         ))}
       </select>

@@ -1,5 +1,5 @@
 import { DestinationCard, OperatorCard, TourCard } from "@/components/cards";
-import { Chip, ErrorState, Page, Photo, SkeletonCards, UserPhoto } from "@/components/chrome";
+import { Chip, ErrorState, Page, Photo, SkeletonCards } from "@/components/chrome";
 import { CATEGORIES, MONTHS } from "@/lib/format";
 import { photo } from "@/lib/photos";
 import { useApp } from "@/lib/store";
@@ -95,15 +95,10 @@ export function ExploreScreen() {
             <h1 className="font-display text-[28px] leading-9">{user ? `Jambo, ${user.firstName}` : "Discover your safari"}</h1>
             <p className="mt-1 text-[14px] leading-5 text-muted-foreground">Compare safaris from verified operators, side by side.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button aria-label="Notifications" onClick={() => navigate({ to: "/notifications" })} className="relative flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-warm">
-              <Bell size={20} />
-              {unreadCount > 0 && <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-gold" />}
-            </button>
-            <button aria-label="Profile" onClick={() => navigate({ to: "/profile" })} className="overflow-hidden rounded-full shadow-warm">
-              <UserPhoto src={user?.avatar} name={user?.firstName || "Explola"} className="h-12 w-12" />
-            </button>
-          </div>
+          <button aria-label="Notifications" onClick={() => navigate({ to: "/notifications" })} className="relative flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-warm">
+            <Bell size={20} />
+            {unreadCount > 0 && <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-gold" />}
+          </button>
         </header>
 
         <button onClick={() => navigate({ to: "/search" })} className="mx-5 mt-4 flex min-h-[52px] w-[calc(100%-2.5rem)] items-center gap-3 rounded-[14px] bg-sand px-4 text-left text-muted-foreground">
@@ -116,10 +111,6 @@ export function ExploreScreen() {
             </Chip>
           ))}
         </div>
-        <button onClick={() => navigate({ to: "/request" })} className="mx-5 mt-2 block text-left text-[14px] font-semibold text-primary">
-          Plan with our concierge
-        </button>
-
         {!online && (
           <div className="mx-5 mt-4">
             <ErrorState title="No internet" body="Pull to refresh when you are back online." onRetry={refresh} />
@@ -147,6 +138,11 @@ export function ExploreScreen() {
                 ))}
               </div>
             </section>
+
+            <button onClick={() => navigate({ to: "/request" })} className="mx-5 mt-6 block w-[calc(100%-2.5rem)] rounded-[20px] bg-[#552026] p-5 text-left text-white">
+              <p className="font-display text-[22px] leading-7">Request a quote</p>
+              <p className="mt-1 text-[14px] text-white/80">Tell us the trip and get prices from verified operators.</p>
+            </button>
 
             <section className="mt-6">
               <SectionTitle title="Browse by interest" onViewAll={() => navigate({ to: "/search", search: { tab: "tours" } })} />
@@ -292,10 +288,7 @@ export function ExploreScreen() {
               ))}
             </section>
 
-            <button onClick={() => navigate({ to: "/request" })} className="mx-5 mt-6 mb-4 block w-[calc(100%-2.5rem)] rounded-[20px] bg-gradient-to-r from-[#552026] to-[#3A1418] p-5 text-left text-white">
-              <p className="font-display text-[22px] leading-7">Plan with our concierge</p>
-              <p className="mt-1 text-[14px] text-white/80">Tell us the trip and get quotes from verified operators.</p>
-            </button>
+            <div className="h-4" />
           </>
         )}
       </div>

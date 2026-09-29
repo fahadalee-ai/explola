@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as ForgotRouteImport } from './routes/forgot'
@@ -45,6 +46,11 @@ import { Route as OperatorListingIdRouteImport } from './routes/operator/listing
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditProfileRoute = EditProfileRouteImport.update({
@@ -205,6 +211,7 @@ const OperatorListingIdRoute = OperatorListingIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/forgot': typeof ForgotRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/forgot': typeof ForgotRoute
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/forgot': typeof ForgotRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/compare'
     | '/edit-profile'
     | '/explore'
     | '/forgot'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/compare'
     | '/edit-profile'
     | '/explore'
     | '/forgot'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/compare'
     | '/edit-profile'
     | '/explore'
     | '/forgot'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CompareRoute: typeof CompareRoute
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   ForgotRoute: typeof ForgotRoute
@@ -453,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/edit-profile': {
@@ -677,6 +697,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CompareRoute: CompareRoute,
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   ForgotRoute: ForgotRoute,
